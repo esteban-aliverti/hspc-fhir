@@ -27,8 +27,8 @@
   -->
 	
 	<modules>
-		<module>cwf-fhir-core</module>
 		<module>cwf-fhir-client</module>
+		<module>cwf-fhir-core</module>
 		<module>cwf-fhir-validator</module>
 	</modules>
 	
