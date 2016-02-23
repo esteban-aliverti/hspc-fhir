@@ -22,6 +22,8 @@ package org.hspconsortium.cwf.fhir.client;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
 import ca.uhn.fhir.rest.client.IRestfulClientFactory;
@@ -34,6 +36,8 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
     
     private IRestfulClientFactory myRestfulClientFactory;
     
+    private final String proxy;
+    
     private static final Map<String, IAuthInterceptor> authInterceptors = new HashMap<String, IAuthInterceptor>();
     
     /**
@@ -44,6 +48,14 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
      */
     public static void registerAuthInterceptor(String id, IAuthInterceptor authInterceptor) {
         authInterceptors.put(id.toLowerCase(), authInterceptor);
+    }
+    
+    public FhirContext() {
+        this(null);
+    }
+    
+    public FhirContext(String proxy) {
+        this.proxy = StringUtils.trimToNull(proxy);
     }
     
     /**
@@ -73,6 +85,11 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
     public IRestfulClientFactory getRestfulClientFactory() {
         if (myRestfulClientFactory == null) {
             myRestfulClientFactory = new RestfulClientFactory(this);
+            
+            if (proxy != null) {
+                String[] pcs = proxy.split("\\:", 2);
+                myRestfulClientFactory.setProxy(pcs[0], Integer.parseInt(pcs[1]));
+            }
         }
         
         return myRestfulClientFactory;
