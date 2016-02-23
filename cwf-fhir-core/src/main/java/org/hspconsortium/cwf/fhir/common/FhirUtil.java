@@ -249,11 +249,11 @@ public class FhirUtil {
     
     public static IdentifierDt getIdentifier(List<IdentifierDt> list, IdentifierTypeCodesEnum... types) {
         for (IdentifierTypeCodesEnum type : types) {
-            CodeableConceptDt typeCode = new CodeableConceptDt(type.getSystem(), type.getCode());
-            
             for (IdentifierDt id : list) {
-                if (typeCode.equals(id.getType())) {
-                    return id;
+                for (CodingDt coding : id.getType().getCoding()) {
+                    if (coding.getSystem().equals(type.getSystem()) && coding.getCode().equals(type.getCode())) {
+                        return id;
+                    }
                 }
             }
         }
