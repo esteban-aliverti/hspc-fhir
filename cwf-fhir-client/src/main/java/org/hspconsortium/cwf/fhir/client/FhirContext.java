@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
 import ca.uhn.fhir.rest.client.IRestfulClientFactory;
+import ca.uhn.fhir.rest.server.EncodingEnum;
 
 /**
  * Subclasses FhirContext to allow custom RestfulClientFactory and to support various authentication
@@ -34,9 +35,9 @@ import ca.uhn.fhir.rest.client.IRestfulClientFactory;
  */
 public class FhirContext extends ca.uhn.fhir.context.FhirContext {
     
-    private IRestfulClientFactory myRestfulClientFactory;
-    
     private final String proxy;
+    
+    private IRestfulClientFactory myRestfulClientFactory;
     
     private static final Map<String, IAuthInterceptor> authInterceptors = new HashMap<String, IAuthInterceptor>();
     
@@ -64,9 +65,12 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
      * @param serverBase The service root url.
      * @param authId The authentication interceptor id (null or empty for none)
      * @param validateConformance If true, validate the server conformance.
+     * @param encoding The encoding type for client requests.
+     * @param prettyPrint The pretty print setting.
      * @return The newly created generic client.
      */
-    public IGenericClient newRestfulGenericClient(String serverBase, String authId, boolean validateConformance) {
+    public IGenericClient newRestfulGenericClient(String serverBase, String authId, boolean validateConformance,
+                                                  EncodingEnum encoding, boolean prettyPrint) {
         IGenericClient client = super.newRestfulGenericClient(serverBase);
         ((GenericClient) client).setDontValidateConformance(!validateConformance);
         IAuthInterceptor authInterceptor = getAuthInterceptor(authId);
@@ -75,6 +79,8 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
             client.registerInterceptor(authInterceptor);
         }
         
+        client.setPrettyPrint(prettyPrint);
+        client.setEncoding(encoding);
         return client;
     }
     
