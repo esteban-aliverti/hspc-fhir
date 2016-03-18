@@ -19,9 +19,13 @@
  */
 package org.hspconsortium.cwf.fhir.common;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
 
 import ca.uhn.fhir.model.api.Bundle;
 import ca.uhn.fhir.model.api.BundleEntry;
@@ -34,10 +38,13 @@ import ca.uhn.fhir.model.dstu2.composite.ContactPointDt;
 import ca.uhn.fhir.model.dstu2.composite.HumanNameDt;
 import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
 import ca.uhn.fhir.model.dstu2.composite.PeriodDt;
+import ca.uhn.fhir.model.dstu2.composite.QuantityDt;
+import ca.uhn.fhir.model.dstu2.composite.TimingDt.Repeat;
 import ca.uhn.fhir.model.dstu2.resource.Patient;
 import ca.uhn.fhir.model.dstu2.valueset.AddressUseEnum;
 import ca.uhn.fhir.model.dstu2.valueset.IdentifierTypeCodesEnum;
 import ca.uhn.fhir.model.dstu2.valueset.NameUseEnum;
+import ca.uhn.fhir.model.dstu2.valueset.UnitsOfTimeEnum;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 
 /**
@@ -45,7 +52,24 @@ import ca.uhn.fhir.model.primitive.DateTimeDt;
  */
 public class FhirUtil {
     
+    
     public static IHumanNameParser defaultHumanNameParser = new HumanNameParser();
+    
+    /**
+     * Convenience method that creates a CodeableConcept with a single coding.
+     * 
+     * @param system The coding system.
+     * @param code The code.
+     * @param displayName The concept's display name.
+     * @return A CodeableConcept instance.
+     */
+    public static CodeableConceptDt createCodeableConcept(String system, String code, String displayName) {
+        CodeableConceptDt codeableConcept = new CodeableConceptDt();
+        CodingDt coding = new CodingDt(system, code);
+        coding.setDisplay(displayName);
+        codeableConcept.addCoding(coding);
+        return codeableConcept;
+    }
     
     /**
      * Creates a period object from a start and end date.
@@ -67,6 +91,62 @@ public class FhirUtil {
         }
         
         return period;
+    }
+    
+    /**
+     * Convert a string-based time unit to the corresponding enum.
+     * 
+     * @param timeUnit The time unit.
+     * @return The corresponding enumeration value.
+     */
+    public static UnitsOfTimeEnum convertTimeUnitToEnum(String timeUnit) {
+        try {
+            return UnitsOfTimeEnum.valueOf(timeUnit.toUpperCase());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Unknown time unit " + timeUnit);
+        }
+    }
+    
+    /**
+     * Attempts to find the frequency code for the proposed timing. For instance Frequency = 1 in
+     * Duration of 24h is 'QD' TODO Handle hard coding used for initial wiring
+     * 
+     * @param repeat The timing.
+     * @return Frequency code corresponding to timing.
+     */
+    public static CodingDt getFrequencyFromRepeat(Repeat repeat) {
+        CodingDt frequency = new CodingDt();
+        if (repeat != null && repeat.getPeriod() != null) {
+            frequency.setSystem(FhirTerminology.COGMED);
+            if (repeat.getFrequency() == 1 && repeat.getPeriod().intValue() == 24) {
+                frequency.setCode("1");
+                frequency.setDisplay("QD");
+            } else if ((repeat.getFrequency() == 1 && repeat.getPeriod().intValue() == 8)
+                    || (repeat.getFrequency() == 3 && repeat.getPeriod().intValue() == 24)) {
+                frequency.setCode("2");
+                frequency.setDisplay("Q8H");
+            }
+        }
+        return frequency;
+    }
+    
+    /**
+     * Method sets the FHIR repeat for the given frequency code
+     * 
+     * @param frequencyCode The frequency code.
+     * @return The corresponding timing.
+     */
+    public static Repeat getRepeatFromFrequencyCode(String frequencyCode) {
+        Repeat repeat = new Repeat();
+        if (frequencyCode != null && frequencyCode.equals("QD")) {
+            repeat.setFrequency(1);
+            repeat.setPeriod(24);
+        }
+        if (frequencyCode != null && frequencyCode.equals("Q8H")) {
+            repeat.setFrequency(1);
+            repeat.setPeriod(8);
+        }
+        return repeat;
     }
     
     /**
@@ -286,6 +366,41 @@ public class FhirUtil {
     }
     
     /**
+     * Returns the resource ID relative path from a IdDt datatype.
+     * 
+     * @param resource The resource.
+     * @return The resource's relative path.
+     */
+    public static String getResourceIdPath(IResource resource) {
+        return resource.getId().getResourceType() + "/" + resource.getId().getIdPart();
+    }
+    
+    /**
+     * Returns the base 64-encoded equivalent of a resource.
+     * 
+     * @param resourceName The resource name.
+     * @return The base 64-encoded resource.
+     */
+    public static byte[] getResourceAndConvertToBase64(String resourceName) {
+        return Base64.encodeBase64(getResourceAsByteArray(resourceName));
+    }
+    
+    /**
+     * Returns the resource as a byte array.
+     * 
+     * @param resourceName The resource name.
+     * @return The resource as a byte array.
+     */
+    public static byte[] getResourceAsByteArray(String resourceName) {
+        try {
+            File file = new File(FhirUtil.class.getClassLoader().getResource(resourceName).getFile());
+            return FileUtils.readFileToByteArray(file);
+        } catch (Exception e) {
+            throw new RuntimeException("Error deserializing file " + resourceName, e);
+        }
+    }
+    
+    /**
      * Returns a patient's MRN. (What labels should be explicitly considered?)
      * 
      * @param patient Patient
@@ -321,6 +436,29 @@ public class FhirUtil {
         }
         
         return res1 == res2 || res1.getId().equals(res2.getId());
+    }
+    
+    /**
+     * Method returns true if two quantities are equal. Compares two quantities by comparing their
+     * values and their units. TODO Do a comparator instead
+     * 
+     * @param qty1 The first quantity
+     * @param qty2 The second quantity
+     * @return True if the two quantities are equal.
+     */
+    public static boolean equalQuantities(QuantityDt qty1, QuantityDt qty2) {
+        if (qty1 == null || qty2 == null || qty1.getUnit() == null || qty2.getUnit() == null || qty1.getValue() == null
+                || qty2.getValue() == null) {
+            return false;
+        } else if (qty1 == qty2) {
+            return true;
+        } else if ((qty1.getValue().compareTo(qty2.getValue()) == 0) && qty1.getUnit().equals(qty2.getUnit())) {
+            // TODO: Fix floating compares within some margin.
+            return true;
+        } else {
+            // TODO Flawed because no unit conversion done here. I am leaving this for a good utility.
+            return false;
+        }
     }
     
     /**
