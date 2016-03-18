@@ -318,6 +318,26 @@ public class FhirUtil {
     }
     
     /**
+     * Concatenates a path fragment to a root path. Ensures that a single "/" character separates
+     * the two parts.
+     * 
+     * @param root The root path.
+     * @param fragment The path fragment.
+     * @return The concatenated result.
+     */
+    public static String concatPath(String root, String fragment) {
+        while (root.endsWith("/")) {
+            root = root.substring(0, root.length() - 1);
+        }
+        
+        while (fragment.startsWith("/")) {
+            fragment = fragment.substring(1);
+        }
+        
+        return root + "/" + fragment;
+    }
+    
+    /**
      * Returns a patient's MRN. (What types should be explicitly considered?)
      * 
      * @param patient Patient

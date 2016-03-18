@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
@@ -34,6 +35,7 @@ import ca.uhn.fhir.rest.server.EncodingEnum;
  * mechanisms.
  */
 public class FhirContext extends ca.uhn.fhir.context.FhirContext {
+    
     
     private final String proxy;
     
@@ -120,6 +122,10 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
         }
         
         return authInterceptor;
+    }
+    
+    public void registerHttpClient(String pattern, CloseableHttpClient client) {
+        ((HttpClientProxy) getRestfulClientFactory().getHttpClient()).registerHttpClient(pattern, client);
     }
     
 }

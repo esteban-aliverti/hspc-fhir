@@ -19,10 +19,16 @@
  */
 package org.hspconsortium.cwf.fhir.common;
 
+import org.hl7.fhir.instance.model.api.IBaseResource;
+
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
+import ca.uhn.fhir.model.dstu2.composite.ResourceReferenceDt;
+import ca.uhn.fhir.model.primitive.IdDt;
+import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 
@@ -81,4 +87,67 @@ public class BaseService {
                 // .encodedJson()
                 .conditional().where(IDENTIFIER.exactly().identifier(identifier)).execute();
     }
+    
+    /**
+     * Returns a resource of the specified type given a resource reference. If the resource has not
+     * been previously fetched, it will be fetched from the server. If the referenced resource is
+     * not of the specified type, null is returned.
+     * 
+     * @param reference A resource reference.
+     * @param clazz The desired resource class.
+     * @return The corresponding resource.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends IBaseResource> T getResource(ResourceReferenceDt reference, Class<T> clazz) {
+        IBaseResource resource = getResource(reference);
+        return clazz.isInstance(resource) ? (T) resource : null;
+    }
+    
+    /**
+     * Returns a resource given a resource reference. If the resource has not been previously
+     * fetched, it will be fetched from the server.
+     * 
+     * @param reference A resource reference.
+     * @return The corresponding resource.
+     */
+    public IBaseResource getResource(ResourceReferenceDt reference) {
+        if (reference.isEmpty()) {
+            return null;
+        }
+        
+        if (reference.getResource() != null) {
+            return reference.getResource();
+        }
+        
+        IdDt resourceId = reference.getReference();
+        
+        if (resourceId == null) {
+            throw new IllegalStateException("Reference has no resource ID defined");
+        }
+        
+        String resourceUrl = expandURL(resourceId.getValue());
+        IBaseResource resource = getClient().read(new UriDt(resourceUrl));
+        reference.setResource(resource);
+        return resource;
+    }
+    
+    /**
+     * Returns the default FHIR service root url.
+     * 
+     * @return Default FHIR service root url.
+     */
+    public String getServiceRoot() {
+        return ((GenericClient) getClient()).getUrlBase();
+    }
+    
+    /**
+     * For urls without a service root, prepends the default service root.
+     * 
+     * @param url URL to expand.
+     * @return URL with a service root prepended.
+     */
+    public String expandURL(String url) {
+        return url.matches("^.+:/") ? url : FhirUtil.concatPath(getServiceRoot(), url);
+    }
+    
 }
