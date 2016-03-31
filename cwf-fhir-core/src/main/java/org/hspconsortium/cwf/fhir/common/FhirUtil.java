@@ -20,15 +20,20 @@
 package org.hspconsortium.cwf.fhir.common;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
+
+import org.carewebframework.common.DateUtil;
 
 import ca.uhn.fhir.model.api.Bundle;
 import ca.uhn.fhir.model.api.BundleEntry;
+import ca.uhn.fhir.model.api.IDatatype;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu2.composite.AddressDt;
 import ca.uhn.fhir.model.dstu2.composite.BoundCodeableConceptDt;
@@ -45,6 +50,7 @@ import ca.uhn.fhir.model.dstu2.valueset.AddressUseEnum;
 import ca.uhn.fhir.model.dstu2.valueset.IdentifierTypeCodesEnum;
 import ca.uhn.fhir.model.dstu2.valueset.NameUseEnum;
 import ca.uhn.fhir.model.dstu2.valueset.UnitsOfTimeEnum;
+import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 
 /**
@@ -493,9 +499,62 @@ public class FhirUtil {
         return result == null ? coding.getCode() : result;
     }
     
+    public static String getDisplayValue(DateTimeDt value) {
+        return DateUtil.formatDate(value.getValue());
+    }
+    
+    public static String getDisplayValue(DateDt value) {
+        return DateUtil.formatDate(value.getValue());
+    }
+    
+    public static String getDisplayValue(QuantityDt value) {
+        String units = value.getUnit();
+        return value.getValue().toString() + (units == null ? "" : " " + units);
+    }
+    
+    public static String getDisplayValue(PeriodDt value) {
+        Date start = value.getStart();
+        Date end = value.getEnd();
+        String result = "";
+        
+        if (start != null) {
+            result = DateUtil.formatDate(start);
+            
+            if (start.equals(end)) {
+                end = null;
+            }
+        }
+        
+        if (end != null) {
+            result += (result.isEmpty() ? "" : " - ") + DateUtil.formatDate(end);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Delegates to the getDisplayValue function for the runtime type of value, if available.
+     * Otherwise, calls toString() on the value.
+     * 
+     * @param value Value to format for display.
+     * @return The formatted value.
+     */
+    public static String getDisplayValue(IDatatype value) {
+        if (value == null) {
+            return "";
+        }
+        
+        try {
+            Method method = MethodUtils.getAccessibleMethod(FhirUtil.class, "getDisplayValue", value.getClass());
+            return method == null ? value.toString() : (String) method.invoke(null, value);
+        } catch (Exception e) {
+            return value.toString();
+        }
+    }
+    
     /**
      * Enforce static class.
      */
     private FhirUtil() {
-    };
+    }
 }
