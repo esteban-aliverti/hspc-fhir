@@ -20,29 +20,34 @@
 package org.hspconsortium.cwf.fhir.client;
 
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+
 import ca.uhn.fhir.model.api.Bundle;
 import ca.uhn.fhir.model.dstu2.resource.Patient;
 import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 
-import org.junit.Test;
-
 public class ClientTest {
+    
+    
+    private static final String FHIR_EP = "http://spark-dstu2.furore.com/fhir";
+    
+    private static final String PATIENT_ID = "80";
     
     @Test
     public void testClient() throws Throwable {
         FhirContext ctx = new FhirContext();
-        GenericClient client = (GenericClient) ctx
-                .newRestfulGenericClient("http://vista-fhir1.carewebframework.net:9080/DSTU2");
+        GenericClient client = (GenericClient) ctx.newRestfulGenericClient(FHIR_EP);
         client.registerInterceptor(new BasicAuthInterceptor("user123", "user321$"));
         client.setDontValidateConformance(true);
-        Patient patient1 = client.read(Patient.class, new UriDt("Patient/1"));
-        assertEquals("1", patient1.getId().getIdPart());
-        Bundle bundle = client.search(new UriDt("Patient?_id=1"));
+        Patient patient1 = client.read(Patient.class, new UriDt("Patient/" + PATIENT_ID));
+        assertEquals(PATIENT_ID, patient1.getId().getIdPart());
+        Bundle bundle = client.search(new UriDt("Patient?_id=" + PATIENT_ID));
         assertEquals(1, bundle.getEntries().size());
         Patient patient2 = (Patient) bundle.getEntries().get(0).getResource();
-        assertEquals("1", patient2.getId().getIdPart());
+        assertEquals(PATIENT_ID, patient2.getId().getIdPart());
     }
     
 }
