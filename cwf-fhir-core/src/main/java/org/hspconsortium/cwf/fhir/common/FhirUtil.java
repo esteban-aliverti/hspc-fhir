@@ -539,7 +539,7 @@ public class FhirUtil {
      * @param value Value to format for display.
      * @return The formatted value.
      */
-    public static String getDisplayValue(IDatatype value) {
+    public static String getDisplayValueForType(IDatatype value) {
         if (value == null) {
             return "";
         }
