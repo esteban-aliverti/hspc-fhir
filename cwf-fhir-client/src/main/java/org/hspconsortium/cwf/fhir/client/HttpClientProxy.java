@@ -19,16 +19,19 @@
  */
 package org.hspconsortium.cwf.fhir.client;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.UriPatternMatcher;
@@ -37,51 +40,46 @@ import org.apache.http.protocol.UriPatternMatcher;
  * Http client proxy to allow registration of custom clients based on url patterns.
  */
 @SuppressWarnings("deprecation")
-public class HttpClientProxy extends CloseableHttpClient {
+public class HttpClientProxy implements HttpClient, Closeable {
+    
     
     /**
      * Specialized client http request factories for servicing atypical requests.
      */
-    private final UriPatternMatcher<CloseableHttpClient> patterns = new UriPatternMatcher<CloseableHttpClient>();
+    private final UriPatternMatcher<HttpClient> patterns = new UriPatternMatcher<>();
     
-    private final List<CloseableHttpClient> clients = new ArrayList<CloseableHttpClient>();
+    private final List<HttpClient> clients = new ArrayList<>();
     
-    public HttpClientProxy(CloseableHttpClient defaultClient) {
-        super();
-        clients.add(defaultClient);
+    private final HttpClient defaultClient;
+    
+    public HttpClientProxy(HttpClient defaultClient) {
+        this.defaultClient = defaultClient;
     }
     
-    public void registerHttpClient(String pattern, CloseableHttpClient client) {
+    public void registerHttpClient(String pattern, HttpClient client) {
         patterns.register(pattern, client);
         clients.add(client);
     }
     
     @Override
     public ClientConnectionManager getConnectionManager() {
-        return getDefaultClient().getConnectionManager();
+        return defaultClient.getConnectionManager();
     }
     
     @Override
     public HttpParams getParams() {
-        return getDefaultClient().getParams();
+        return defaultClient.getParams();
     }
     
     @Override
     public void close() throws IOException {
-        for (CloseableHttpClient client : clients) {
-            close(client);
+        for (HttpClient client : clients) {
+            if (client instanceof Closeable) {
+                close((Closeable) client);
+            }
         }
         
         clients.clear();
-    }
-    
-    /**
-     * Returns the default client.
-     * 
-     * @return The default client.
-     */
-    private CloseableHttpClient getDefaultClient() {
-        return clients.get(0);
     }
     
     /**
@@ -89,19 +87,61 @@ public class HttpClientProxy extends CloseableHttpClient {
      * 
      * @param client Client to close.
      */
-    private void close(CloseableHttpClient client) {
+    private void close(Closeable client) {
         try {
             client.close();
         } catch (IOException e) {}
     }
     
-    @Override
-    protected CloseableHttpResponse doExecute(HttpHost host, HttpRequest request, HttpContext context)
-                                                                                                      throws ClientProtocolException,
-                                                                                                      IOException {
+    private HttpClient getClient(HttpRequest request) {
         String uri = request.getRequestLine().getUri();
-        CloseableHttpClient client = patterns.lookup(uri);
-        return (client != null ? client : getDefaultClient()).execute(host, request, context);
+        HttpClient client = patterns.lookup(uri);
+        return client != null ? client : defaultClient;
+    }
+    
+    @Override
+    public HttpResponse execute(HttpUriRequest request) throws IOException, ClientProtocolException {
+        return getClient(request).execute(request);
+    }
+    
+    @Override
+    public HttpResponse execute(HttpUriRequest request, HttpContext context) throws IOException, ClientProtocolException {
+        return getClient(request).execute(request, context);
+    }
+    
+    @Override
+    public HttpResponse execute(HttpHost target, HttpRequest request) throws IOException, ClientProtocolException {
+        return getClient(request).execute(target, request);
+    }
+    
+    @Override
+    public HttpResponse execute(HttpHost target, HttpRequest request, HttpContext context) throws IOException,
+                                                                                           ClientProtocolException {
+        return getClient(request).execute(target, request, context);
+    }
+    
+    @Override
+    public <T> T execute(HttpUriRequest request, ResponseHandler<? extends T> responseHandler) throws IOException,
+                                                                                               ClientProtocolException {
+        return getClient(request).execute(request, responseHandler);
+    }
+    
+    @Override
+    public <T> T execute(HttpUriRequest request, ResponseHandler<? extends T> responseHandler,
+                         HttpContext context) throws IOException, ClientProtocolException {
+        return getClient(request).execute(request, responseHandler, context);
+    }
+    
+    @Override
+    public <T> T execute(HttpHost target, HttpRequest request,
+                         ResponseHandler<? extends T> responseHandler) throws IOException, ClientProtocolException {
+        return getClient(request).execute(target, request, responseHandler);
+    }
+    
+    @Override
+    public <T> T execute(HttpHost target, HttpRequest request, ResponseHandler<? extends T> responseHandler,
+                         HttpContext context) throws IOException, ClientProtocolException {
+        return getClient(request).execute(target, request, responseHandler, context);
     }
     
 }

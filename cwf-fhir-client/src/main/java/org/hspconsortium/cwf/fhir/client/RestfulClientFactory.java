@@ -19,43 +19,27 @@
  */
 package org.hspconsortium.cwf.fhir.client;
 
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.rest.client.GenericClient;
-import ca.uhn.fhir.rest.client.IGenericClient;
-
-import org.apache.http.impl.client.CloseableHttpClient;
+import ca.uhn.fhir.rest.client.apache.ApacheRestfulClientFactory;
 
 /**
  * Subclass RestfulClientFactory to return http client proxy.
  */
-public class RestfulClientFactory extends ca.uhn.fhir.rest.client.RestfulClientFactory {
+public class RestfulClientFactory extends ApacheRestfulClientFactory {
+    
     
     private HttpClientProxy myClient;
     
-    private FhirContext myContext;
-    
-    public RestfulClientFactory(FhirContext theFhirContext) {
-        super(theFhirContext);
-        myContext = theFhirContext;
+    public RestfulClientFactory(FhirContext fhirContext) {
+        super(fhirContext);
     }
     
     @Override
-    public void setFhirContext(FhirContext theContext) {
-        super.setFhirContext(theContext);
-        myContext = theContext;
-    }
-    
-    @Override
-    public IGenericClient newGenericClient(String theServerBase) {
-        return new GenericClient(myContext, getHttpClient(), theServerBase, this);
-    }
-    
-    @Override
-    public synchronized HttpClientProxy getHttpClient() {
+    public synchronized HttpClientProxy getNativeHttpClient() {
         if (myClient == null) {
-            myClient = new HttpClientProxy((CloseableHttpClient) super.getHttpClient());
+            myClient = new HttpClientProxy(super.getNativeHttpClient());
         }
         
         return myClient;
     }
+    
 }

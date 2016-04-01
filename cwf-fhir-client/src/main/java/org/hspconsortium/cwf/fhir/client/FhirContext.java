@@ -23,11 +23,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.client.HttpClient;
 
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
-import ca.uhn.fhir.rest.client.IRestfulClientFactory;
 import ca.uhn.fhir.rest.server.EncodingEnum;
 
 /**
@@ -39,7 +38,7 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
     
     private final String proxy;
     
-    private IRestfulClientFactory myRestfulClientFactory;
+    private RestfulClientFactory myRestfulClientFactory;
     
     private static final Map<String, IAuthInterceptor> authInterceptors = new HashMap<String, IAuthInterceptor>();
     
@@ -90,7 +89,7 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
      * Overridden to create a custom RESTful client factory.
      */
     @Override
-    public IRestfulClientFactory getRestfulClientFactory() {
+    public RestfulClientFactory getRestfulClientFactory() {
         if (myRestfulClientFactory == null) {
             myRestfulClientFactory = new RestfulClientFactory(this);
             
@@ -124,8 +123,8 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
         return authInterceptor;
     }
     
-    public void registerHttpClient(String pattern, CloseableHttpClient client) {
-        ((HttpClientProxy) getRestfulClientFactory().getHttpClient()).registerHttpClient(pattern, client);
+    public void registerHttpClient(String pattern, HttpClient client) {
+        getRestfulClientFactory().getNativeHttpClient().registerHttpClient(pattern, client);
     }
     
 }
