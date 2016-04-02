@@ -35,11 +35,13 @@ import ca.uhn.fhir.model.dstu2.resource.Bundle.Entry;
 import ca.uhn.fhir.model.dstu2.resource.Condition;
 import ca.uhn.fhir.model.dstu2.resource.MedicationAdministration;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.client.IGenericClient;
 
-public class PatientConditionService extends BaseService {
+public class ConditionService extends BaseService {
     
     
-    public PatientConditionService() {
+    public ConditionService(IGenericClient client) {
+        super(client);
     }
     
     public List<IQICoreCondition> searchConditionsByIdentifier(String system, String code) {

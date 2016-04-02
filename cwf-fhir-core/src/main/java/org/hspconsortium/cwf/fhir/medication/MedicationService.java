@@ -38,11 +38,13 @@ import ca.uhn.fhir.model.dstu2.resource.Condition;
 import ca.uhn.fhir.model.dstu2.resource.MedicationAdministration;
 import ca.uhn.fhir.model.dstu2.resource.MedicationOrder;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.client.IGenericClient;
 
-public class PatientMedicationService extends BaseService {
+public class MedicationService extends BaseService {
     
     
-    public PatientMedicationService() {
+    public MedicationService(IGenericClient client) {
+        super(client);
     }
     
     public List<IQICoreMedicationAdministration> searchMedAdminByIdentifier(String system, String code) {

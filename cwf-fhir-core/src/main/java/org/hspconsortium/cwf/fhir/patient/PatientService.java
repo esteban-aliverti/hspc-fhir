@@ -31,11 +31,13 @@ import ca.uhn.fhir.model.dstu2.resource.Bundle;
 import ca.uhn.fhir.model.dstu2.resource.Bundle.Entry;
 import ca.uhn.fhir.model.dstu2.resource.Patient;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.client.IGenericClient;
 
 public class PatientService extends BaseService {
     
     
-    public PatientService() {
+    public PatientService(IGenericClient client) {
+        super(client);
     }
     
     public List<IQICorePatient> searchPatientByIdentifier(String system, String code) {

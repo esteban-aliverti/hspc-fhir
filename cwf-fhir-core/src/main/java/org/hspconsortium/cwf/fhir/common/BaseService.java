@@ -21,7 +21,6 @@ package org.hspconsortium.cwf.fhir.common;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
 
-import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
 import ca.uhn.fhir.model.dstu2.composite.ResourceReferenceDt;
@@ -39,34 +38,18 @@ public class BaseService {
     
     public static final TokenClientParam IDENTIFIER = new TokenClientParam(SP_IDENTIFIER);
     
-    private FhirContext ctx;
+    private final IGenericClient client;
     
-    private IGenericClient client;
-    
-    public BaseService() {
+    public BaseService(IGenericClient client) {
+        this.client = client;
     }
     
     public IGenericClient getClient() {
         return this.client;
     }
     
-    public void setClient(IGenericClient client) {
-        this.client = client;
-    }
-    
-    protected FhirContext getFhirContext() {
-        return this.ctx;
-    }
-    
-    public void setFhirContext(FhirContext ctx) {
-        this.ctx = ctx;
-    }
-    
     public void updateResource(IResource resource) {
-        getClient().update().resource(resource)
-                // .prettyPrint()
-                // .encodedJson()
-                .execute();
+        getClient().update().resource(resource).execute();
     }
     
     public MethodOutcome createResource(IResource resource) {
@@ -77,15 +60,13 @@ public class BaseService {
      * Method creates a resource only if the resource with that identifier does not already exist.
      * At this time, the call appears to create the resource even when it already exists.
      * 
-     * @param resource
-     * @param identifier
-     * @return
+     * @param resource A FHIR resource.
+     * @param identifier The resource identifier.
+     * @return The outcome of the operation.
      */
     public MethodOutcome createResourceIfNotExist(IResource resource, IdentifierDt identifier) {
-        return getClient().create().resource(resource)
-                // .prettyPrint()
-                // .encodedJson()
-                .conditional().where(IDENTIFIER.exactly().identifier(identifier)).execute();
+        return getClient().create().resource(resource).conditional().where(IDENTIFIER.exactly().identifier(identifier))
+                .execute();
     }
     
     /**
