@@ -40,7 +40,7 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
     
     private RestfulClientFactory myRestfulClientFactory;
     
-    private static final Map<String, IAuthInterceptor> authInterceptors = new HashMap<String, IAuthInterceptor>();
+    private static final Map<String, IAuthInterceptor> authInterceptors = new HashMap<>();
     
     /**
      * Registers a custom authentication interceptor.
