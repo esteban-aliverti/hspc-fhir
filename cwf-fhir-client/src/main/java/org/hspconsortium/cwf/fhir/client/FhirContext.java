@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 
+import ca.uhn.fhir.context.FhirVersionEnum;
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
 import ca.uhn.fhir.rest.server.EncodingEnum;
@@ -53,10 +54,15 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
     }
     
     public FhirContext() {
-        this(null);
+        this(null, null);
     }
     
-    public FhirContext(String proxy) {
+    public FhirContext(FhirVersionEnum fhirVersion) {
+        this(fhirVersion, null);
+    }
+    
+    public FhirContext(FhirVersionEnum fhirVersion, String proxy) {
+        super(fhirVersion);
         this.proxy = StringUtils.trimToNull(proxy);
     }
     

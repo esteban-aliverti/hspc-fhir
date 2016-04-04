@@ -12,6 +12,7 @@
 	
 		<!-- FHIR context and client -->
 		<bean id="fhirContext" class="org.hspconsortium.cwf.fhir.client.FhirContext">
+			<constructor-arg value="${fhir.version:DSTU2}" />
 			<constructor-arg value="${fhir.service.proxy:}" />
 		</bean>
 		
