@@ -497,13 +497,18 @@ public class FhirUtil {
      */
     public static String getIdAsString(IdDt id, boolean stripVersion) {
         String result = id.getValueAsString();
-        
-        if (stripVersion && id.hasVersionIdPart()) {
-            int i = result.lastIndexOf("/_history");
-            result = i == -1 ? result : result.substring(0, i);
-        }
-        
-        return result;
+        return stripVersion && id.hasVersionIdPart() ? stripVersion(result) : result;
+    }
+    
+    /**
+     * Strips the version qualifier from an id, if present.
+     * 
+     * @param id The id.
+     * @return The id without a version qualifier.
+     */
+    public static String stripVersion(String id) {
+        int i = id.lastIndexOf("/_history");
+        return i == -1 ? id : id.substring(0, i);
     }
     
     /**
