@@ -52,6 +52,7 @@ import ca.uhn.fhir.model.dstu2.valueset.NameUseEnum;
 import ca.uhn.fhir.model.dstu2.valueset.UnitsOfTimeEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
+import ca.uhn.fhir.model.primitive.IdDt;
 
 /**
  * Domain object utility methods.
@@ -176,7 +177,7 @@ public class FhirUtil {
     }
     
     /**
-     * Extracts the list of resource from a bundle.
+     * Extracts the list of resources from a bundle.
      * 
      * @param bundle The bundle.
      * @param clazz Class of resource to extract.
@@ -457,11 +458,52 @@ public class FhirUtil {
      * @return True if the two resources have equal id's.
      */
     public static <T extends IResource> boolean areEqual(T res1, T res2) {
+        return areEqual(res1, res2, false);
+    }
+    
+    /**
+     * Performs an equality check on two resources using their id's.
+     * 
+     * @param res1 The first resource.
+     * @param res2 The second resource.
+     * @param ignoreVersion If true, ignore any version qualifiers in the comparison.
+     * @return True if the two resources have equal id's.
+     */
+    public static <T extends IResource> boolean areEqual(T res1, T res2, boolean ignoreVersion) {
         if (res1 == null || res2 == null) {
             return false;
         }
         
-        return res1 == res2 || res1.getId().equals(res2.getId());
+        return res1 == res2 || getIdAsString(res1, ignoreVersion).equals(getIdAsString(res2, ignoreVersion));
+    }
+    
+    /**
+     * Returns the string representation of the resource's id.
+     * 
+     * @param resource The resource.
+     * @param stripVersion If true and the id has a version qualifier, remove it.
+     * @return The string representation of the resource's id.
+     */
+    public static <T extends IResource> String getIdAsString(T resource, boolean stripVersion) {
+        return getIdAsString(resource.getId(), stripVersion);
+    }
+    
+    /**
+     * Returns the string representation of the id.
+     * 
+     * @param id The id.
+     * @param stripVersion If true and the id has a version qualifier, remove it.
+     * @return The string representation of the id.
+     */
+    public static String getIdAsString(IdDt id, boolean stripVersion) {
+        String result = id.getValueAsString();
+        
+        if (stripVersion && id.hasVersionIdPart()) {
+            int i = result.lastIndexOf("/_history");
+            result = i == -1 ? result : result.substring(0, i);
+        }
+        
+        return result;
     }
     
     /**
