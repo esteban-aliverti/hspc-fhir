@@ -600,6 +600,28 @@ public class FhirUtil {
     }
     
     /**
+     * Invokes getDisplayValueForType on each list element, using the specified delimiter to
+     * separate results.
+     * 
+     * @param values Values to format for display.
+     * @param delimiter Delimiter to separate multiple values.
+     * @return The formatted values.
+     */
+    public static String getDisplayValueForTypes(List<IDatatype> values, String delimiter) {
+        StringBuilder sb = new StringBuilder();
+        
+        for (IDatatype value : values) {
+            String result = getDisplayValueForType(value);
+            
+            if (!result.isEmpty()) {
+                sb.append(sb.length() == 0 ? "" : delimiter).append(result);
+            }
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
      * Enforce static class.
      */
     private FhirUtil() {

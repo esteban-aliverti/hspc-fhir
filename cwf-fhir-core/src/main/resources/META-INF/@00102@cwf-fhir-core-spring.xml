@@ -24,6 +24,10 @@
 			<constructor-arg value="${fhir.client.prettyprint:false}" />
 		</bean>
 		
+		<bean id="fhirBaseService" class="org.hspconsortium.cwf.fhir.common.BaseService">
+			<constructor-arg ref="fhirClient" />
+		</bean>
+		
 		<bean id="fhirPatientService" class="org.hspconsortium.cwf.fhir.patient.PatientService">
 			<constructor-arg ref="fhirClient" />
 		</bean>
