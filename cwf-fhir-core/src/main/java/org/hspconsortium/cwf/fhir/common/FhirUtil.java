@@ -44,6 +44,8 @@ import ca.uhn.fhir.model.dstu2.composite.HumanNameDt;
 import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
 import ca.uhn.fhir.model.dstu2.composite.PeriodDt;
 import ca.uhn.fhir.model.dstu2.composite.QuantityDt;
+import ca.uhn.fhir.model.dstu2.composite.SimpleQuantityDt;
+import ca.uhn.fhir.model.dstu2.composite.TimingDt;
 import ca.uhn.fhir.model.dstu2.composite.TimingDt.Repeat;
 import ca.uhn.fhir.model.dstu2.resource.Patient;
 import ca.uhn.fhir.model.dstu2.valueset.AddressUseEnum;
@@ -579,6 +581,28 @@ public class FhirUtil {
         return result;
     }
     
+    public static String getDisplayValue(SimpleQuantityDt value) {
+        String unit = value.getUnit();
+        String code = value.getCode();
+        unit = unit.equals(unit) ? "" : " " + unit;
+        return value.getValue().toPlainString() + code + unit;
+    }
+    
+    public static String getDisplayValue(TimingDt value) {
+        StringBuilder sb = new StringBuilder(getDisplayValueForType(value.getCode())).append(" ");
+        Repeat repeat = value.getRepeat();
+        
+        if (!repeat.isEmpty()) {
+            // TODO: finish
+        }
+        
+        if (!value.getEvent().isEmpty()) {
+            sb.append(" at ").append(getDisplayValueForTypes(value.getEvent(), ", "));
+        }
+        
+        return sb.toString();
+    }
+    
     /**
      * Delegates to the getDisplayValue function for the runtime type of value, if available.
      * Otherwise, calls toString() on the value.
@@ -587,7 +611,7 @@ public class FhirUtil {
      * @return The formatted value.
      */
     public static String getDisplayValueForType(IDatatype value) {
-        if (value == null) {
+        if (value == null || value.isEmpty()) {
             return "";
         }
         
@@ -607,7 +631,7 @@ public class FhirUtil {
      * @param delimiter Delimiter to separate multiple values.
      * @return The formatted values.
      */
-    public static String getDisplayValueForTypes(List<IDatatype> values, String delimiter) {
+    public static String getDisplayValueForTypes(List<? extends IDatatype> values, String delimiter) {
         StringBuilder sb = new StringBuilder();
         
         for (IDatatype value : values) {
