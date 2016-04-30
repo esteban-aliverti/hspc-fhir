@@ -21,16 +21,17 @@ package org.hspconsortium.cwf.fhir.common;
 
 import java.util.List;
 
-import ca.uhn.fhir.model.dstu2.composite.HumanNameDt;
-import ca.uhn.fhir.model.primitive.StringDt;
+import org.hl7.fhir.dstu3.model.HumanName;
+import org.hl7.fhir.dstu3.model.StringType;
 
 /**
  * Default human name parser.
  */
 public class HumanNameParser implements IHumanNameParser {
     
+    
     @Override
-    public String toString(HumanNameDt name) {
+    public String toString(HumanName name) {
         StringBuilder sb = new StringBuilder();
         append(sb, name.getPrefix());
         append(sb, name.getFamily());
@@ -41,13 +42,13 @@ public class HumanNameParser implements IHumanNameParser {
     }
     
     @Override
-    public HumanNameDt fromString(HumanNameDt name, String value) {
+    public HumanName fromString(HumanName name, String value) {
         String[] pcs = value.split("\\,", 2);
         String[] pcs1 = pcs[0].split("\\ ");
         String[] pcs2 = pcs.length == 1 ? null : pcs[1].split("\\ ");
         
         if (name == null) {
-            name = new HumanNameDt();
+            name = new HumanName();
         }
         
         for (String pc : pcs1) {
@@ -71,8 +72,8 @@ public class HumanNameParser implements IHumanNameParser {
         return name;
     }
     
-    private void append(StringBuilder sb, List<StringDt> components) {
-        for (StringDt component : components) {
+    private void append(StringBuilder sb, List<StringType> components) {
+        for (StringType component : components) {
             if (sb.length() > 0) {
                 sb.append(" ");
             }

@@ -23,20 +23,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hl7.fhir.dstu3.model.Bundle;
+import org.hl7.fhir.dstu3.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.dstu3.model.Condition;
+import org.hl7.fhir.dstu3.model.Identifier;
+import org.hl7.fhir.dstu3.model.MedicationAdministration;
+import org.hl7.fhir.dstu3.model.MedicationOrder;
+import org.hl7.fhir.dstu3.model.Patient;
 import org.hspconsortium.cwf.fhir.common.BaseService;
 import org.hspconsortium.cwf.fhir.common.FhirUtil;
-import org.socraticgrid.fhir.generated.IQICoreMedicationAdministration;
-import org.socraticgrid.fhir.generated.IQICoreMedicationOrder;
-import org.socraticgrid.fhir.generated.IQICorePatient;
-import org.socraticgrid.fhir.generated.QICoreMedicationAdministrationAdapter;
-import org.socraticgrid.fhir.generated.QICoreMedicationOrderAdapter;
 
-import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
-import ca.uhn.fhir.model.dstu2.resource.Bundle;
-import ca.uhn.fhir.model.dstu2.resource.Bundle.Entry;
-import ca.uhn.fhir.model.dstu2.resource.Condition;
-import ca.uhn.fhir.model.dstu2.resource.MedicationAdministration;
-import ca.uhn.fhir.model.dstu2.resource.MedicationOrder;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.IGenericClient;
 
@@ -47,131 +43,129 @@ public class MedicationService extends BaseService {
         super(client);
     }
     
-    public List<IQICoreMedicationAdministration> searchMedAdminByIdentifier(String system, String code) {
-        IdentifierDt identifier = new IdentifierDt(system, code);
+    public List<MedicationAdministration> searchMedAdminByIdentifier(String system, String code) {
+        Identifier identifier = FhirUtil.createIdentifier(system, code);
         return searchMedAdminByIdentifier(identifier);
     }
     
-    public List<IQICoreMedicationAdministration> searchMedAdminByIdentifier(IdentifierDt identifier) {
-        List<IQICoreMedicationAdministration> meds = new ArrayList<>();
-        Bundle patientBundle = getClient().search().forResource(MedicationAdministration.class)
-                .where(MedicationAdministration.IDENTIFIER.exactly().identifier(identifier)).returnBundle(Bundle.class)
-                .execute();
-        for (Entry entry : patientBundle.getEntry()) {
+    public List<MedicationAdministration> searchMedAdminByIdentifier(Identifier identifier) {
+        List<MedicationAdministration> meds = new ArrayList<>();
+        
+        Bundle patientBundle = getClient().search()
+                .forResource(MedicationAdministration.class).where(MedicationAdministration.IDENTIFIER.exactly()
+                        .systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .returnBundle(Bundle.class).execute();
+        for (BundleEntryComponent entry : patientBundle.getEntry()) {
             MedicationAdministration medication = (MedicationAdministration) entry.getResource();
             if (medication != null) {
-                IQICoreMedicationAdministration adapter = new QICoreMedicationAdministrationAdapter();
-                adapter.setAdaptee(medication);
-                meds.add(adapter);
+                meds.add(medication);
             }
         }
         return meds;
     }
     
-    public List<IQICoreMedicationOrder> searchMedOrderByIdentifier(String system, String code) {
-        IdentifierDt identifier = new IdentifierDt(system, code);
+    public List<MedicationOrder> searchMedOrderByIdentifier(String system, String code) {
+        Identifier identifier = FhirUtil.createIdentifier(system, code);
         return searchMedOrderByIdentifier(identifier);
     }
     
-    public List<IQICoreMedicationOrder> searchMedOrderByIdentifier(IdentifierDt identifier) {
-        List<IQICoreMedicationOrder> meds = new ArrayList<>();
+    public List<MedicationOrder> searchMedOrderByIdentifier(Identifier identifier) {
+        List<MedicationOrder> meds = new ArrayList<>();
         Bundle patientBundle = getClient().search().forResource(MedicationOrder.class)
-                .where(MedicationOrder.IDENTIFIER.exactly().identifier(identifier)).returnBundle(Bundle.class).execute();
-        for (Entry entry : patientBundle.getEntry()) {
+                .where(
+                    MedicationOrder.IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .returnBundle(Bundle.class).execute();
+        for (BundleEntryComponent entry : patientBundle.getEntry()) {
             MedicationOrder medOrder = (MedicationOrder) entry.getResource();
             if (medOrder != null) {
-                IQICoreMedicationOrder adapter = new QICoreMedicationOrderAdapter();
-                adapter.setAdaptee(medOrder);
-                meds.add(adapter);
+                meds.add(medOrder);
             }
         }
         return meds;
     }
     
-    public void updateMedicationAdministration(IQICoreMedicationAdministration medAdmin) {
-        updateResource(medAdmin.getAdaptee());
+    public void updateMedicationAdministration(MedicationAdministration medAdmin) {
+        updateResource(medAdmin);
     }
     
-    public void updateMedicationOrder(IQICoreMedicationOrder medOrder) {
-        updateResource(medOrder.getAdaptee());
+    public void updateMedicationOrder(MedicationOrder medOrder) {
+        updateResource(medOrder);
     }
     
-    public MethodOutcome createMedicationAdministration(IQICoreMedicationAdministration medAdmin) {
-        return createResource(medAdmin.getAdaptee());
+    public MethodOutcome createMedicationAdministration(MedicationAdministration medAdmin) {
+        return createResource(medAdmin);
     }
     
-    public MethodOutcome createMedicationOrder(IQICoreMedicationOrder medOrder) {
-        return createResource(medOrder.getAdaptee());
+    public MethodOutcome createMedicationOrder(MedicationOrder medOrder) {
+        return createResource(medOrder);
     }
     
-    public MethodOutcome addMedicationAdministrationIfNotExist(IQICoreMedicationAdministration medAdmin,
-                                                               IdentifierDt identifier) {
-        return createResourceIfNotExist(medAdmin.getAdaptee(), identifier);
+    public MethodOutcome addMedicationAdministrationIfNotExist(MedicationAdministration medAdmin, Identifier identifier) {
+        return createResourceIfNotExist(medAdmin, identifier);
     }
     
-    public MethodOutcome addMedicationOrderIfNotExist(IQICoreMedicationOrder medOrder, IdentifierDt identifier) {
-        return createResourceIfNotExist(medOrder.getAdaptee(), identifier);
+    public MethodOutcome addMedicationOrderIfNotExist(MedicationOrder medOrder, Identifier identifier) {
+        return createResourceIfNotExist(medOrder, identifier);
     }
     
-    public List<IQICoreMedicationAdministration> searchMedicationAdministrationsForPatient(IQICorePatient patient) {
-        List<IQICoreMedicationAdministration> medAdmins = new ArrayList<>();
-        System.out.println(FhirUtil.getResourceIdPath(patient.getAdaptee()));
+    public List<MedicationAdministration> searchMedicationAdministrationsForPatient(Patient patient) {
+        List<MedicationAdministration> medAdmins = new ArrayList<>();
         Bundle bundle = getClient().search().forResource(MedicationAdministration.class)
-                .where(MedicationAdministration.PATIENT.hasId(FhirUtil.getResourceIdPath(patient.getAdaptee())))
+                .where(MedicationAdministration.PATIENT.hasId(FhirUtil.getResourceIdPath(patient)))
                 .returnBundle(Bundle.class).execute();
-        for (Bundle.Entry entry : bundle.getEntry()) {
+        for (BundleEntryComponent entry : bundle.getEntry()) {
             if (entry.getResource() instanceof MedicationAdministration) {
-                QICoreMedicationAdministrationAdapter adapter = new QICoreMedicationAdministrationAdapter();
-                adapter.setAdaptee((MedicationAdministration) entry.getResource());//Fix this
-                medAdmins.add(adapter);
+                medAdmins.add((MedicationAdministration) entry.getResource());//Fix this
             }
         }
         Collections.sort(medAdmins, Comparators.MED_ADMIN_EFFECTIVE_TIME);
         return medAdmins;
     }
     
-    public List<IQICoreMedicationOrder> searchMedicationOrdersForPatient(IQICorePatient patient) {
-        List<IQICoreMedicationOrder> medOrders = new ArrayList<>();
-        System.out.println(FhirUtil.getResourceIdPath(patient.getAdaptee()));
+    public List<MedicationOrder> searchMedicationOrdersForPatient(Patient patient) {
+        List<MedicationOrder> medOrders = new ArrayList<>();
+        System.out.println(FhirUtil.getResourceIdPath(patient));
         Bundle bundle = getClient().search().forResource(MedicationOrder.class)
-                .where(MedicationOrder.PATIENT.hasId(FhirUtil.getResourceIdPath(patient.getAdaptee())))
-                .returnBundle(Bundle.class).execute();
-        for (Bundle.Entry entry : bundle.getEntry()) {
+                .where(MedicationOrder.PATIENT.hasId(FhirUtil.getResourceIdPath(patient))).returnBundle(Bundle.class)
+                .execute();
+        for (BundleEntryComponent entry : bundle.getEntry()) {
             if (entry.getResource() instanceof MedicationOrder) {
-                QICoreMedicationOrderAdapter adapter = new QICoreMedicationOrderAdapter();
-                adapter.setAdaptee((MedicationOrder) entry.getResource());//Fix this
-                medOrders.add(adapter);
+                medOrders.add((MedicationOrder) entry.getResource());//Fix this
             }
         }
         Collections.sort(medOrders, Comparators.MED_ORDER_DATE_WRITTEN);
         return medOrders;
     }
     
-    public void deleteMedicationAdministrationsByIdentifier(IdentifierDt identifier) {
-        Bundle medAdminBundle = getClient().search().forResource(MedicationAdministration.class)
-                .where(MedicationAdministration.IDENTIFIER.exactly().identifier(identifier)).returnBundle(Bundle.class)
-                .execute();
-        List<Entry> entries = medAdminBundle.getEntry();
-        for (Entry entry : entries) {
+    public void deleteMedicationAdministrationsByIdentifier(Identifier identifier) {
+        Bundle medAdminBundle = getClient().search()
+                .forResource(MedicationAdministration.class).where(MedicationAdministration.IDENTIFIER.exactly()
+                        .systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .returnBundle(Bundle.class).execute();
+        List<BundleEntryComponent> entries = medAdminBundle.getEntry();
+        for (BundleEntryComponent entry : entries) {
             MedicationAdministration medAdmin = (MedicationAdministration) entry.getResource();
             getClient().delete().resource(medAdmin).execute();
         }
     }
     
-    public void deleteMedicationOrdersByIdentifier(IdentifierDt identifier) {
+    public void deleteMedicationOrdersByIdentifier(Identifier identifier) {
         Bundle medOrderBundle = getClient().search().forResource(MedicationOrder.class)
-                .where(MedicationOrder.IDENTIFIER.exactly().identifier(identifier)).returnBundle(Bundle.class).execute();
-        List<Entry> entries = medOrderBundle.getEntry();
-        for (Entry entry : entries) {
+                .where(
+                    MedicationOrder.IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .returnBundle(Bundle.class).execute();
+        List<BundleEntryComponent> entries = medOrderBundle.getEntry();
+        for (BundleEntryComponent entry : entries) {
             getClient().delete().resource(entry.getResource()).execute();
         }
     }
     
-    public void deleteConditionsByIdentifier(IdentifierDt identifier) {
+    public void deleteConditionsByIdentifier(Identifier identifier) {
         Bundle conditionBundle = getClient().search().forResource(Condition.class)
-                .where(Condition.IDENTIFIER.exactly().identifier(identifier)).returnBundle(Bundle.class).execute();
-        List<Entry> entries = conditionBundle.getEntry();
-        for (Entry entry : entries) {
+                .where(Condition.IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .returnBundle(Bundle.class).execute();
+        List<BundleEntryComponent> entries = conditionBundle.getEntry();
+        for (BundleEntryComponent entry : entries) {
             getClient().delete().resource(entry.getResource()).execute();
         }
     }

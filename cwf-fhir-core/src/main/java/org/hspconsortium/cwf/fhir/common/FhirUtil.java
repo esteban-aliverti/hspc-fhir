@@ -31,30 +31,29 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 
 import org.carewebframework.common.DateUtil;
 
-import ca.uhn.fhir.model.api.Bundle;
-import ca.uhn.fhir.model.api.BundleEntry;
-import ca.uhn.fhir.model.api.IDatatype;
-import ca.uhn.fhir.model.api.IResource;
-import ca.uhn.fhir.model.dstu2.composite.AddressDt;
-import ca.uhn.fhir.model.dstu2.composite.BoundCodeableConceptDt;
-import ca.uhn.fhir.model.dstu2.composite.CodeableConceptDt;
-import ca.uhn.fhir.model.dstu2.composite.CodingDt;
-import ca.uhn.fhir.model.dstu2.composite.ContactPointDt;
-import ca.uhn.fhir.model.dstu2.composite.HumanNameDt;
-import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
-import ca.uhn.fhir.model.dstu2.composite.PeriodDt;
-import ca.uhn.fhir.model.dstu2.composite.QuantityDt;
-import ca.uhn.fhir.model.dstu2.composite.SimpleQuantityDt;
-import ca.uhn.fhir.model.dstu2.composite.TimingDt;
-import ca.uhn.fhir.model.dstu2.composite.TimingDt.Repeat;
-import ca.uhn.fhir.model.dstu2.resource.Patient;
-import ca.uhn.fhir.model.dstu2.valueset.AddressUseEnum;
-import ca.uhn.fhir.model.dstu2.valueset.IdentifierTypeCodesEnum;
-import ca.uhn.fhir.model.dstu2.valueset.NameUseEnum;
-import ca.uhn.fhir.model.dstu2.valueset.UnitsOfTimeEnum;
-import ca.uhn.fhir.model.primitive.DateDt;
-import ca.uhn.fhir.model.primitive.DateTimeDt;
-import ca.uhn.fhir.model.primitive.IdDt;
+import org.hl7.fhir.dstu3.model.Address;
+import org.hl7.fhir.dstu3.model.Address.AddressUse;
+import org.hl7.fhir.dstu3.model.Bundle;
+import org.hl7.fhir.dstu3.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.dstu3.model.CodeableConcept;
+import org.hl7.fhir.dstu3.model.Coding;
+import org.hl7.fhir.dstu3.model.ContactPoint;
+import org.hl7.fhir.dstu3.model.DateTimeType;
+import org.hl7.fhir.dstu3.model.DateType;
+import org.hl7.fhir.dstu3.model.HumanName;
+import org.hl7.fhir.dstu3.model.HumanName.NameUse;
+import org.hl7.fhir.dstu3.model.Identifier;
+import org.hl7.fhir.dstu3.model.Patient;
+import org.hl7.fhir.dstu3.model.Period;
+import org.hl7.fhir.dstu3.model.Quantity;
+import org.hl7.fhir.dstu3.model.SimpleQuantity;
+import org.hl7.fhir.dstu3.model.Timing;
+import org.hl7.fhir.dstu3.model.Timing.TimingRepeatComponent;
+import org.hl7.fhir.dstu3.model.Timing.UnitsOfTime;
+import org.hl7.fhir.instance.model.api.IAnyResource;
+import org.hl7.fhir.instance.model.api.IBaseDatatype;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.instance.model.api.IIdType;
 
 /**
  * Domain object utility methods.
@@ -72,10 +71,9 @@ public class FhirUtil {
      * @param displayName The concept's display name.
      * @return A CodeableConcept instance.
      */
-    public static CodeableConceptDt createCodeableConcept(String system, String code, String displayName) {
-        CodeableConceptDt codeableConcept = new CodeableConceptDt();
-        CodingDt coding = new CodingDt(system, code);
-        coding.setDisplay(displayName);
+    public static CodeableConcept createCodeableConcept(String system, String code, String displayName) {
+        CodeableConcept codeableConcept = new CodeableConcept();
+        Coding coding = new Coding(system, code, displayName);
         codeableConcept.addCoding(coding);
         return codeableConcept;
     }
@@ -87,19 +85,26 @@ public class FhirUtil {
      * @param endDate The ending date.
      * @return A period object, or null if both dates are null.
      */
-    public static PeriodDt createPeriod(Date startDate, Date endDate) {
-        PeriodDt period = null;
+    public static Period createPeriod(Date startDate, Date endDate) {
+        Period period = null;
         
         if (startDate != null) {
-            period = new PeriodDt();
-            period.setStart(new DateTimeDt(startDate));
+            period = new Period();
+            period.setStart(startDate);
         }
         
         if (endDate != null) {
-            (period == null ? period = new PeriodDt() : period).setEnd(new DateTimeDt(endDate));
+            (period == null ? period = new Period() : period).setEnd(endDate);
         }
         
         return period;
+    }
+    
+    public static Identifier createIdentifier(String system, String value) {
+        Identifier identifier = new Identifier();
+        identifier.setSystem(system);
+        identifier.setValue(value);
+        return identifier;
     }
     
     /**
@@ -108,9 +113,9 @@ public class FhirUtil {
      * @param timeUnit The time unit.
      * @return The corresponding enumeration value.
      */
-    public static UnitsOfTimeEnum convertTimeUnitToEnum(String timeUnit) {
+    public static UnitsOfTime convertTimeUnitToEnum(String timeUnit) {
         try {
-            return UnitsOfTimeEnum.valueOf(timeUnit.toUpperCase());
+            return UnitsOfTime.valueOf(timeUnit.toUpperCase());
         } catch (Exception e) {
             throw new IllegalArgumentException("Unknown time unit " + timeUnit);
         }
@@ -123,10 +128,10 @@ public class FhirUtil {
      * @param repeat The timing.
      * @return Frequency code corresponding to timing.
      */
-    public static CodingDt getFrequencyFromRepeat(Repeat repeat) {
-        CodingDt frequency = new CodingDt();
+    public static Coding getFrequencyFromRepeat(TimingRepeatComponent repeat) {
+        Coding frequency = new Coding();
         if (repeat != null && repeat.getPeriod() != null) {
-            frequency.setSystem(FhirTerminology.COGMED);
+            frequency.setSystem(FhirTerminology.SYS_COGMED);
             if (repeat.getFrequency() == 1 && repeat.getPeriod().intValue() == 24) {
                 frequency.setCode("1");
                 frequency.setDisplay("QD");
@@ -145,8 +150,8 @@ public class FhirUtil {
      * @param frequencyCode The frequency code.
      * @return The corresponding timing.
      */
-    public static Repeat getRepeatFromFrequencyCode(String frequencyCode) {
-        Repeat repeat = new Repeat();
+    public static TimingRepeatComponent getRepeatFromFrequencyCode(String frequencyCode) {
+        TimingRepeatComponent repeat = new TimingRepeatComponent();
         if (frequencyCode != null && frequencyCode.equals("QD")) {
             repeat.setFrequency(1);
             repeat.setPeriod(24);
@@ -186,12 +191,12 @@ public class FhirUtil {
      * @return The list of extracted resources.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends IResource> List<T> getEntries(Bundle bundle, Class<T> clazz) {
+    public static <T extends IBaseResource> List<T> getEntries(Bundle bundle, Class<T> clazz) {
         List<T> entries = new ArrayList<T>();
         
         if (bundle != null) {
-            for (BundleEntry entry : bundle.getEntries()) {
-                IResource resource = entry.getResource();
+            for (BundleEntryComponent entry : bundle.getEntry()) {
+                IBaseResource resource = entry.getResource();
                 
                 if (clazz.isInstance(resource)) {
                     entries.add((T) entry.getResource());
@@ -210,9 +215,9 @@ public class FhirUtil {
      *            found. A null value matches any system.
      * @return An coding with a matching system, or null if none found.
      */
-    public static CodingDt getCoding(List<CodingDt> list, String... systems) {
+    public static Coding getCoding(List<Coding> list, String... systems) {
         for (String system : systems) {
-            for (CodingDt coding : list) {
+            for (Coding coding : list) {
                 if (system == null || system.equals(coding.getSystem())) {
                     return coding;
                 }
@@ -230,9 +235,9 @@ public class FhirUtil {
      *            null value matches any use category.
      * @return An address with a matching use category, or null if none found.
      */
-    public static AddressDt getAddress(List<AddressDt> list, AddressUseEnum... uses) {
-        for (AddressUseEnum use : uses) {
-            for (AddressDt address : list) {
+    public static Address getAddress(List<Address> list, AddressUse... uses) {
+        for (AddressUse use : uses) {
+            for (Address address : list) {
                 if (use == null || use.equals(address.getUse())) {
                     return address;
                 }
@@ -249,10 +254,10 @@ public class FhirUtil {
      * @param type Contact type to find (e.g., "home:phone").
      * @return A contact with a matching type, or null if none found.
      */
-    public static ContactPointDt getContact(List<ContactPointDt> list, String type) {
+    public static ContactPoint getContact(List<ContactPoint> list, String type) {
         String[] pcs = type.split(":", 2);
         
-        for (ContactPointDt contact : list) {
+        for (ContactPoint contact : list) {
             if (pcs[0].equals(contact.getUse()) && pcs[1].equals(contact.getSystem())) {
                 return contact;
             }
@@ -269,9 +274,9 @@ public class FhirUtil {
      *            null value matches any use category.
      * @return A name with a matching use category, or null if none found.
      */
-    public static HumanNameDt getName(List<HumanNameDt> list, NameUseEnum... uses) {
-        for (NameUseEnum use : uses) {
-            for (HumanNameDt name : list) {
+    public static HumanName getName(List<HumanName> list, NameUse... uses) {
+        for (NameUse use : uses) {
+            for (HumanName name : list) {
                 if (use == null || use.equals(name.getUse())) {
                     return name;
                 }
@@ -281,11 +286,11 @@ public class FhirUtil {
         return null;
     }
     
-    public static HumanNameDt parseName(String name) {
+    public static HumanName parseName(String name) {
         return name == null ? null : defaultHumanNameParser.fromString(null, name);
     }
     
-    public static String formatName(HumanNameDt name) {
+    public static String formatName(HumanName name) {
         return name == null ? "" : defaultHumanNameParser.toString(name);
     }
     
@@ -295,8 +300,8 @@ public class FhirUtil {
      * @param names List of names
      * @return A formatted name.
      */
-    public static String formatName(List<HumanNameDt> names) {
-        return formatName(names, NameUseEnum.USUAL, null);
+    public static String formatName(List<HumanName> names) {
+        return formatName(names, NameUse.USUAL, null);
     }
     
     /**
@@ -306,7 +311,7 @@ public class FhirUtil {
      * @param uses Use categories (use categories to search).
      * @return A formatted name.
      */
-    public static String formatName(List<HumanNameDt> names, NameUseEnum... uses) {
+    public static String formatName(List<HumanName> names, NameUse... uses) {
         return formatName(getName(names, uses));
     }
     
@@ -352,14 +357,14 @@ public class FhirUtil {
      * @param patient Patient
      * @return MRN identifier
      */
-    public static IdentifierDt getMRN(Patient patient) {
-        return patient == null ? null : getIdentifier(patient.getIdentifier(), IdentifierTypeCodesEnum.MR);
+    public static Identifier getMRN(Patient patient) {
+        return patient == null ? null : getIdentifier(patient.getIdentifier(), FhirTerminology.CODING_MRN);
     }
     
-    public static IdentifierDt getIdentifier(List<IdentifierDt> list, IdentifierTypeCodesEnum... types) {
-        for (IdentifierTypeCodesEnum type : types) {
-            for (IdentifierDt id : list) {
-                for (CodingDt coding : id.getType().getCoding()) {
+    public static Identifier getIdentifier(List<Identifier> list, Coding... types) {
+        for (Coding type : types) {
+            for (Identifier id : list) {
+                for (Coding coding : id.getType().getCoding()) {
                     if (coding.getSystem().equals(type.getSystem()) && coding.getCode().equals(type.getCode())) {
                         return id;
                     }
@@ -371,37 +376,13 @@ public class FhirUtil {
     }
     
     /**
-     * Sets the identifier's type. This is a workaround for HAPI-FHIR's restrictive setter for this
-     * property.
-     * 
-     * @param identifier The identifier whose type is to be set.
-     * @param system The identifier type system.
-     * @param code The identifier type code.
-     */
-    public static void setIdentifierType(IdentifierDt identifier, String system, String code) {
-        setIdentifierType(identifier, new CodeableConceptDt(system, code));
-    }
-    
-    /**
-     * Sets the identifier's type. This is a workaround for HAPI-FHIR's restrictive setter for this
-     * property.
-     * 
-     * @param identifier The identifier whose type is to be set.
-     * @param code The identifier type.
-     */
-    @SuppressWarnings("unchecked")
-    public static void setIdentifierType(IdentifierDt identifier, CodeableConceptDt code) {
-        identifier.setType((BoundCodeableConceptDt<IdentifierTypeCodesEnum>) code);
-    }
-    
-    /**
      * Returns the resource ID relative path from a IdDt datatype.
      * 
      * @param resource The resource.
      * @return The resource's relative path.
      */
-    public static String getResourceIdPath(IResource resource) {
-        return resource.getId().getResourceType() + "/" + resource.getId().getIdPart();
+    public static String getResourceIdPath(IAnyResource resource) {
+        return resource.getIdElement().getResourceType() + "/" + resource.getIdElement().getIdPart();
     }
     
     /**
@@ -436,7 +417,7 @@ public class FhirUtil {
      * @return MRN as a string.
      */
     public static String getMRNString(Patient patient) {
-        IdentifierDt identifier = getMRN(patient);
+        Identifier identifier = getMRN(patient);
         return identifier == null ? "" : identifier.getValue();
     }
     
@@ -459,7 +440,7 @@ public class FhirUtil {
      * @param res2 The second resource.
      * @return True if the two resources have equal id's.
      */
-    public static <T extends IResource> boolean areEqual(T res1, T res2) {
+    public static <T extends IAnyResource> boolean areEqual(T res1, T res2) {
         return areEqual(res1, res2, false);
     }
     
@@ -471,7 +452,7 @@ public class FhirUtil {
      * @param ignoreVersion If true, ignore any version qualifiers in the comparison.
      * @return True if the two resources have equal id's.
      */
-    public static <T extends IResource> boolean areEqual(T res1, T res2, boolean ignoreVersion) {
+    public static <T extends IAnyResource> boolean areEqual(T res1, T res2, boolean ignoreVersion) {
         if (res1 == null || res2 == null) {
             return false;
         }
@@ -486,8 +467,8 @@ public class FhirUtil {
      * @param stripVersion If true and the id has a version qualifier, remove it.
      * @return The string representation of the resource's id.
      */
-    public static <T extends IResource> String getIdAsString(T resource, boolean stripVersion) {
-        return getIdAsString(resource.getId(), stripVersion);
+    public static <T extends IAnyResource> String getIdAsString(T resource, boolean stripVersion) {
+        return getIdAsString(resource.getIdElement(), stripVersion);
     }
     
     /**
@@ -497,7 +478,7 @@ public class FhirUtil {
      * @param stripVersion If true and the id has a version qualifier, remove it.
      * @return The string representation of the id.
      */
-    public static String getIdAsString(IdDt id, boolean stripVersion) {
+    public static String getIdAsString(IIdType id, boolean stripVersion) {
         String result = id.getValueAsString();
         return stripVersion && id.hasVersionIdPart() ? stripVersion(result) : result;
     }
@@ -521,7 +502,7 @@ public class FhirUtil {
      * @param qty2 The second quantity
      * @return True if the two quantities are equal.
      */
-    public static boolean equalQuantities(QuantityDt qty1, QuantityDt qty2) {
+    public static boolean equalQuantities(Quantity qty1, Quantity qty2) {
         if (qty1 == null || qty2 == null || qty1.getUnit() == null || qty2.getUnit() == null || qty1.getValue() == null
                 || qty2.getValue() == null) {
             return false;
@@ -542,26 +523,26 @@ public class FhirUtil {
      * @param value Codeable concept.
      * @return Displayable value.
      */
-    public static String getDisplayValue(CodeableConceptDt value) {
-        CodingDt coding = value.getCodingFirstRep();
+    public static String getDisplayValue(CodeableConcept value) {
+        Coding coding = FhirUtil.getFirst(value.getCoding());
         String result = coding.getDisplay();
         return result == null ? coding.getCode() : result;
     }
     
-    public static String getDisplayValue(DateTimeDt value) {
+    public static String getDisplayValue(DateTimeType value) {
         return DateUtil.formatDate(value.getValue());
     }
     
-    public static String getDisplayValue(DateDt value) {
+    public static String getDisplayValue(DateType value) {
         return DateUtil.formatDate(value.getValue());
     }
     
-    public static String getDisplayValue(QuantityDt value) {
+    public static String getDisplayValue(Quantity value) {
         String units = value.getUnit();
         return value.getValue().toString() + (units == null ? "" : " " + units);
     }
     
-    public static String getDisplayValue(PeriodDt value) {
+    public static String getDisplayValue(Period value) {
         Date start = value.getStart();
         Date end = value.getEnd();
         String result = "";
@@ -581,16 +562,16 @@ public class FhirUtil {
         return result;
     }
     
-    public static String getDisplayValue(SimpleQuantityDt value) {
+    public static String getDisplayValue(SimpleQuantity value) {
         String unit = value.getUnit();
         String code = value.getCode();
         unit = unit.equals(unit) ? "" : " " + unit;
         return value.getValue().toPlainString() + code + unit;
     }
     
-    public static String getDisplayValue(TimingDt value) {
+    public static String getDisplayValue(Timing value) {
         StringBuilder sb = new StringBuilder(getDisplayValueForType(value.getCode())).append(" ");
-        Repeat repeat = value.getRepeat();
+        TimingRepeatComponent repeat = value.getRepeat();
         
         if (!repeat.isEmpty()) {
             // TODO: finish
@@ -610,7 +591,7 @@ public class FhirUtil {
      * @param value Value to format for display.
      * @return The formatted value.
      */
-    public static String getDisplayValueForType(IDatatype value) {
+    public static String getDisplayValueForType(IBaseDatatype value) {
         if (value == null || value.isEmpty()) {
             return "";
         }
@@ -631,10 +612,10 @@ public class FhirUtil {
      * @param delimiter Delimiter to separate multiple values.
      * @return The formatted values.
      */
-    public static String getDisplayValueForTypes(List<? extends IDatatype> values, String delimiter) {
+    public static String getDisplayValueForTypes(List<? extends IBaseDatatype> values, String delimiter) {
         StringBuilder sb = new StringBuilder();
         
-        for (IDatatype value : values) {
+        for (IBaseDatatype value : values) {
             String result = getDisplayValueForType(value);
             
             if (!result.isEmpty()) {

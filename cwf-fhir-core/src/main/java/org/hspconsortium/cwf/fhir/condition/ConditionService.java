@@ -23,17 +23,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hl7.fhir.dstu3.model.Bundle;
+import org.hl7.fhir.dstu3.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.dstu3.model.Condition;
+import org.hl7.fhir.dstu3.model.Identifier;
+import org.hl7.fhir.dstu3.model.MedicationAdministration;
+import org.hl7.fhir.dstu3.model.Patient;
 import org.hspconsortium.cwf.fhir.common.BaseService;
 import org.hspconsortium.cwf.fhir.common.FhirUtil;
-import org.socraticgrid.fhir.generated.IQICoreCondition;
-import org.socraticgrid.fhir.generated.IQICorePatient;
-import org.socraticgrid.fhir.generated.QICoreConditionAdapter;
 
-import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
-import ca.uhn.fhir.model.dstu2.resource.Bundle;
-import ca.uhn.fhir.model.dstu2.resource.Bundle.Entry;
-import ca.uhn.fhir.model.dstu2.resource.Condition;
-import ca.uhn.fhir.model.dstu2.resource.MedicationAdministration;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.IGenericClient;
 
@@ -44,61 +42,58 @@ public class ConditionService extends BaseService {
         super(client);
     }
     
-    public List<IQICoreCondition> searchConditionsByIdentifier(String system, String code) {
-        IdentifierDt identifier = new IdentifierDt(system, code);
+    public List<Condition> searchConditionsByIdentifier(String system, String code) {
+        Identifier identifier = FhirUtil.createIdentifier(system, code);
         return searchConditionsByIdentifier(identifier);
     }
     
-    public List<IQICoreCondition> searchConditionsByIdentifier(IdentifierDt identifier) {
-        List<IQICoreCondition> conditions = new ArrayList<IQICoreCondition>();
+    public List<Condition> searchConditionsByIdentifier(Identifier identifier) {
+        List<Condition> conditions = new ArrayList<Condition>();
         Bundle patientBundle = getClient().search().forResource(Condition.class)
-                .where(Condition.IDENTIFIER.exactly().identifier(identifier)).returnBundle(Bundle.class).execute();
-        for (Entry entry : patientBundle.getEntry()) {
+                .where(Condition.IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .returnBundle(Bundle.class).execute();
+        for (BundleEntryComponent entry : patientBundle.getEntry()) {
             Condition condition = (Condition) entry.getResource();
             if (condition != null) {
-                IQICoreCondition adapter = new QICoreConditionAdapter();
-                adapter.setAdaptee(condition);
-                conditions.add(adapter);
+                conditions.add(condition);
             }
         }
         return conditions;
     }
     
-    public void updateCondition(IQICoreCondition condition) {
-        updateResource(condition.getAdaptee());
+    public void updateCondition(Condition condition) {
+        updateResource(condition);
     }
     
-    public MethodOutcome createCondition(IQICoreCondition condition) {
-        return createResource(condition.getAdaptee());
+    public MethodOutcome createCondition(Condition condition) {
+        return createResource(condition);
     }
     
-    public MethodOutcome addConditionIfNotExist(IQICoreCondition condition, IdentifierDt identifier) {
-        return createResourceIfNotExist(condition.getAdaptee(), identifier);
+    public MethodOutcome addConditionIfNotExist(Condition condition, Identifier identifier) {
+        return createResourceIfNotExist(condition, identifier);
     }
     
-    public List<IQICoreCondition> searchConditionForPatient(IQICorePatient patient) {
-        List<IQICoreCondition> conditions = new ArrayList<IQICoreCondition>();
-        System.out.println(FhirUtil.getResourceIdPath(patient.getAdaptee()));
+    public List<Condition> searchConditionForPatient(Patient patient) {
+        List<Condition> conditions = new ArrayList<Condition>();
+        System.out.println(FhirUtil.getResourceIdPath(patient));
         Bundle bundle = getClient().search().forResource(Condition.class)
-                .where(Condition.PATIENT.hasId(FhirUtil.getResourceIdPath(patient.getAdaptee()))).returnBundle(Bundle.class)
-                .execute();
-        for (Bundle.Entry entry : bundle.getEntry()) {
+                .where(Condition.PATIENT.hasId(FhirUtil.getResourceIdPath(patient))).returnBundle(Bundle.class).execute();
+        for (BundleEntryComponent entry : bundle.getEntry()) {
             if (entry.getResource() instanceof Condition) {
-                IQICoreCondition adapter = new QICoreConditionAdapter();
-                adapter.setAdaptee((Condition) entry.getResource());//Fix this
-                conditions.add(adapter);
+                conditions.add((Condition) entry.getResource());//Fix this
             }
         }
         Collections.sort(conditions, Comparators.CONDITION_DATE_RECORDED);
         return conditions;
     }
     
-    public void deleteConditionByIdentifier(IdentifierDt identifier) {
-        Bundle conditionBundle = getClient().search().forResource(Condition.class)
-                .where(MedicationAdministration.IDENTIFIER.exactly().identifier(identifier)).returnBundle(Bundle.class)
-                .execute();
-        List<Entry> entries = conditionBundle.getEntry();
-        for (Entry entry : entries) {
+    public void deleteConditionByIdentifier(Identifier identifier) {
+        Bundle conditionBundle = getClient().search()
+                .forResource(Condition.class).where(MedicationAdministration.IDENTIFIER.exactly()
+                        .systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .returnBundle(Bundle.class).execute();
+        List<BundleEntryComponent> entries = conditionBundle.getEntry();
+        for (BundleEntryComponent entry : entries) {
             getClient().delete().resource(entry.getResource()).execute();
         }
     }

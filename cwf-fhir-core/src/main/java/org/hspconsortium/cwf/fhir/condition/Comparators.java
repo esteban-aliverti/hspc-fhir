@@ -21,7 +21,7 @@ package org.hspconsortium.cwf.fhir.condition;
 
 import java.util.Comparator;
 
-import org.socraticgrid.fhir.generated.IQICoreCondition;
+import org.hl7.fhir.dstu3.model.Condition;
 
 /**
  * Comparators for sorting lists of condition-related resources.
@@ -29,11 +29,11 @@ import org.socraticgrid.fhir.generated.IQICoreCondition;
 public class Comparators {
     
     
-    public static final Comparator<IQICoreCondition> CONDITION_DATE_RECORDED = new Comparator<IQICoreCondition>() {
+    public static final Comparator<Condition> CONDITION_DATE_RECORDED = new Comparator<Condition>() {
         
         
         @Override
-        public int compare(IQICoreCondition o1, IQICoreCondition o2) {
+        public int compare(Condition o1, Condition o2) {
             return o1 == o2 ? 0 : o1 == null ? -1 : o2 == null ? 1 : o1.getDateRecorded().compareTo(o2.getDateRecorded());
         }
     };

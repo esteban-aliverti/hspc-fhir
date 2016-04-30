@@ -19,12 +19,12 @@
  */
 package org.hspconsortium.cwf.fhir.common;
 
+import org.hl7.fhir.dstu3.model.IdType;
+import org.hl7.fhir.dstu3.model.Identifier;
+import org.hl7.fhir.dstu3.model.Reference;
+import org.hl7.fhir.instance.model.api.IAnyResource;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 
-import ca.uhn.fhir.model.api.IResource;
-import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
-import ca.uhn.fhir.model.dstu2.composite.ResourceReferenceDt;
-import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.GenericClient;
@@ -48,11 +48,11 @@ public class BaseService {
         return this.client;
     }
     
-    public void updateResource(IResource resource) {
+    public void updateResource(IBaseResource resource) {
         getClient().update().resource(resource).execute();
     }
     
-    public MethodOutcome createResource(IResource resource) {
+    public MethodOutcome createResource(IBaseResource resource) {
         return getClient().create().resource(resource).execute();
     }
     
@@ -64,9 +64,9 @@ public class BaseService {
      * @param identifier The resource identifier.
      * @return The outcome of the operation.
      */
-    public MethodOutcome createResourceIfNotExist(IResource resource, IdentifierDt identifier) {
-        return getClient().create().resource(resource).conditional().where(IDENTIFIER.exactly().identifier(identifier))
-                .execute();
+    public MethodOutcome createResourceIfNotExist(IAnyResource resource, Identifier identifier) {
+        return getClient().create().resource(resource).conditional()
+                .where(IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue())).execute();
     }
     
     /**
@@ -79,7 +79,7 @@ public class BaseService {
      * @return The corresponding resource.
      */
     @SuppressWarnings("unchecked")
-    public <T extends IBaseResource> T getResource(ResourceReferenceDt reference, Class<T> clazz) {
+    public <T extends IBaseResource> T getResource(Reference reference, Class<T> clazz) {
         IBaseResource resource = getResource(reference);
         return clazz.isInstance(resource) ? (T) resource : null;
     }
@@ -91,7 +91,7 @@ public class BaseService {
      * @param reference A resource reference.
      * @return The corresponding resource.
      */
-    public IBaseResource getResource(ResourceReferenceDt reference) {
+    public IBaseResource getResource(Reference reference) {
         if (reference.isEmpty()) {
             return null;
         }
@@ -100,7 +100,7 @@ public class BaseService {
             return reference.getResource();
         }
         
-        IdDt resourceId = reference.getReference();
+        IdType resourceId = reference.getIdElement();
         
         if (resourceId == null) {
             throw new IllegalStateException("Reference has no resource ID defined");

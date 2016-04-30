@@ -29,7 +29,6 @@
 	<modules>
 		<module>cwf-fhir-client</module>
 		<module>cwf-fhir-core</module>
-		<module>cwf-fhir-validator</module>
 	</modules>
 	
 	<dependencyManagement>
@@ -37,7 +36,7 @@
 			<dependency>
 				<groupId>ca.uhn.hapi.fhir</groupId>
 				<artifactId>hapi-fhir-base</artifactId>
-				<version>1.5-SNAPSHOT</version>
+				<version>1.6-SNAPSHOT</version>
 				<exclusions>
 					<exclusion>
 						<groupId>org.slf4j</groupId>
@@ -47,13 +46,8 @@
 			</dependency>
 			<dependency>
 				<groupId>ca.uhn.hapi.fhir</groupId>
-				<artifactId>hapi-fhir-structures-dstu2</artifactId>
-				<version>1.5-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>ca.uhn.hapi.fhir</groupId>
-				<artifactId>hapi-fhir-structures-dstu</artifactId>
-				<version>1.5-SNAPSHOT</version>
+				<artifactId>hapi-fhir-structures-dstu3</artifactId>
+				<version>1.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>

@@ -19,9 +19,10 @@
  */
 package org.hspconsortium.cwf.fhir.common;
 
-import ca.uhn.fhir.model.dstu2.composite.HumanNameDt;
+import org.hl7.fhir.dstu3.model.HumanName;
 
 public interface IHumanNameParser {
+    
     
     /**
      * Converts human name to displayable text.
@@ -29,7 +30,7 @@ public interface IHumanNameParser {
      * @param name Human name.
      * @return Displayable text.
      */
-    String toString(HumanNameDt name);
+    String toString(HumanName name);
     
     /**
      * Converts text to a human name equivalent.
@@ -38,6 +39,6 @@ public interface IHumanNameParser {
      * @param value Value to convert.
      * @return The human name parsed from the input value.
      */
-    HumanNameDt fromString(HumanNameDt name, String value);
+    HumanName fromString(HumanName name, String value);
     
 }

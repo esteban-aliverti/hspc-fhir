@@ -19,17 +19,34 @@
  */
 package org.hspconsortium.cwf.fhir.common;
 
+import org.hl7.fhir.dstu3.model.CodeableConcept;
+import org.hl7.fhir.dstu3.model.Coding;
+
 public class FhirTerminology {
     
     
-    public static final String RXNORM = "http://www.nlm.nih.gov/research/umls/rxnorm";
+    public static final String SYS_RXNORM = "http://www.nlm.nih.gov/research/umls/rxnorm";
     
-    public static final String UCUM = "http://unitsofmeasure.org";
+    public static final String SYS_UCUM = "http://unitsofmeasure.org";
     
-    public static final String SNOMED = "http://snomed.info/sct";
+    public static final String SYS_SNOMED = "http://snomed.info/sct";
     
-    public static final String COGMED = "http://cogmedsys/terminology";
+    public static final String SYS_COGMED = "http://cogmedsys/terminology";
+    
+    public static final String SYS_IDENTIFIER_TYPE = "http://hl7.org/fhir/v2/0203";
+    
+    public static final Coding CODING_MRN = new Coding(SYS_IDENTIFIER_TYPE, "MR", "MRN");
+    
+    public static final Coding CODING_SSN = new Coding(SYS_IDENTIFIER_TYPE, "SS", "SSN");
+    
+    public static final Coding CODING_DEA = new Coding(SYS_IDENTIFIER_TYPE, "DEA", "DEA");
+    
+    public static final CodeableConcept IDENT_MRN = new CodeableConcept().addCoding(CODING_MRN);
+    
+    public static final CodeableConcept IDENT_SSN = new CodeableConcept().addCoding(CODING_SSN);
+    
+    public static final CodeableConcept IDENT_DEA = new CodeableConcept().addCoding(CODING_DEA);
     
     private FhirTerminology() {
-    };
+    }
 }
