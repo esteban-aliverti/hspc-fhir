@@ -46,6 +46,7 @@ import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Period;
 import org.hl7.fhir.dstu3.model.Quantity;
+import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.dstu3.model.SimpleQuantity;
 import org.hl7.fhir.dstu3.model.Timing;
 import org.hl7.fhir.dstu3.model.Timing.TimingRepeatComponent;
@@ -562,11 +563,13 @@ public class FhirUtil {
         return result;
     }
     
+    public static String getDisplayValue(Reference value) {
+        return value.getDisplay();
+    }
+    
     public static String getDisplayValue(SimpleQuantity value) {
-        String unit = value.getUnit();
-        String code = value.getCode();
-        unit = unit.equals(unit) ? "" : " " + unit;
-        return value.getValue().toPlainString() + code + unit;
+        String unit = value.hasUnit() ? " " + value.getUnit() : "";
+        return value.getValue().toPlainString() + unit;
     }
     
     public static String getDisplayValue(Timing value) {

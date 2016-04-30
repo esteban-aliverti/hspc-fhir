@@ -19,7 +19,6 @@
  */
 package org.hspconsortium.cwf.fhir.common;
 
-import org.hl7.fhir.dstu3.model.IdType;
 import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.instance.model.api.IAnyResource;
@@ -100,13 +99,13 @@ public class BaseService {
             return reference.getResource();
         }
         
-        IdType resourceId = reference.getIdElement();
+        String resourceId = reference.getReference();
         
         if (resourceId == null) {
             throw new IllegalStateException("Reference has no resource ID defined");
         }
         
-        String resourceUrl = expandURL(resourceId.getValue());
+        String resourceUrl = expandURL(resourceId);
         IBaseResource resource = getClient().read(new UriDt(resourceUrl));
         reference.setResource(resource);
         return resource;
