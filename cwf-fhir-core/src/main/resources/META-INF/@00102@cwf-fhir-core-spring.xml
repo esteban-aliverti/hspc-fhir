@@ -40,6 +40,14 @@
 			<constructor-arg ref="fhirClient" />
 		</bean>
 		
+		<bean id="fhirDocumentService" class="org.hspconsortium.cwf.fhir.document.DocumentService">
+			<constructor-arg ref="fhirClient" />
+		</bean>
+		
+		<bean id="documentTypeEnumerator"
+			class="org.hspconsortium.cwf.fhir.document.DocumentTypeEnumerator">
+			<constructor-arg ref="fhirDocumentService" />
+		</bean>
 	</beans>
 	
 </beans>

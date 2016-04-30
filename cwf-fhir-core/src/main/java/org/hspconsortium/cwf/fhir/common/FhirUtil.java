@@ -19,14 +19,14 @@
  */
 package org.hspconsortium.cwf.fhir.common;
 
-import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
 import org.carewebframework.common.DateUtil;
@@ -403,9 +403,8 @@ public class FhirUtil {
      * @return The resource as a byte array.
      */
     public static byte[] getResourceAsByteArray(String resourceName) {
-        try {
-            File file = new File(FhirUtil.class.getClassLoader().getResource(resourceName).getFile());
-            return FileUtils.readFileToByteArray(file);
+        try (InputStream is = FhirUtil.class.getClassLoader().getResource(resourceName).openStream()) {
+            return IOUtils.toByteArray(is);
         } catch (Exception e) {
             throw new RuntimeException("Error deserializing file " + resourceName, e);
         }
