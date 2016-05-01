@@ -19,15 +19,9 @@
  */
 package org.hspconsortium.cwf.fhir.patient;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.hl7.fhir.dstu3.model.Bundle;
-import org.hl7.fhir.dstu3.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hspconsortium.cwf.fhir.common.BaseService;
-import org.hspconsortium.cwf.fhir.common.FhirUtil;
 
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.IGenericClient;
@@ -39,25 +33,6 @@ public class PatientService extends BaseService {
         super(client);
     }
     
-    public List<Patient> searchPatientByIdentifier(String system, String code) {
-        Identifier identifier = FhirUtil.createIdentifier(system, code);
-        return searchPatientByIdentifier(identifier);
-    }
-    
-    public List<Patient> searchPatientByIdentifier(Identifier identifier) {
-        List<Patient> patients = new ArrayList<Patient>();
-        Bundle patientBundle = getClient().search().forResource(Patient.class)
-                .where(Patient.IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
-                .returnBundle(Bundle.class).execute();
-        for (BundleEntryComponent entry : patientBundle.getEntry()) {
-            if (entry.getResource() != null) {
-                Patient patient = (Patient) entry.getResource();
-                patients.add(patient);
-            }
-        }
-        return patients;
-    }
-    
     public void updatePatient(Patient patient) {
         updateResource(patient);
     }
@@ -67,27 +42,7 @@ public class PatientService extends BaseService {
     }
     
     public MethodOutcome addPatientIfNotExist(Patient patient, Identifier identifier) {
-        //return createResourceIfNotExist(patient.getAdaptee(), identifier);//Does not appear to be working
-        List<Patient> patientAdapters = searchPatientByIdentifier(identifier);
-        MethodOutcome outcome = null;
-        if (patientAdapters.size() == 0) {
-            outcome = createPatient(patient);
-        } else {
-            outcome = new MethodOutcome();
-            outcome.setCreated(false);
-        }
-        return outcome;
+        return createResourceIfNotExist(patient, identifier);
     }
     
-    public void deletePatientByIdentifier(Identifier identifier) {
-        Bundle patientBundle = getClient().search().forResource(Patient.class)
-                //				.prettyPrint()
-                //				.encodedJson()
-                .where(Patient.IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
-                .returnBundle(Bundle.class).execute();
-        List<BundleEntryComponent> entries = patientBundle.getEntry();
-        for (BundleEntryComponent entry : entries) {
-            getClient().delete().resource(entry.getResource()).execute();
-        }
-    }
 }

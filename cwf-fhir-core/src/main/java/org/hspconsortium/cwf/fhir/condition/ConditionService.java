@@ -19,18 +19,13 @@
  */
 package org.hspconsortium.cwf.fhir.condition;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.hl7.fhir.dstu3.model.Bundle;
-import org.hl7.fhir.dstu3.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.dstu3.model.Condition;
 import org.hl7.fhir.dstu3.model.Identifier;
-import org.hl7.fhir.dstu3.model.MedicationAdministration;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hspconsortium.cwf.fhir.common.BaseService;
-import org.hspconsortium.cwf.fhir.common.FhirUtil;
 
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.IGenericClient;
@@ -42,25 +37,6 @@ public class ConditionService extends BaseService {
         super(client);
     }
     
-    public List<Condition> searchConditionsByIdentifier(String system, String code) {
-        Identifier identifier = FhirUtil.createIdentifier(system, code);
-        return searchConditionsByIdentifier(identifier);
-    }
-    
-    public List<Condition> searchConditionsByIdentifier(Identifier identifier) {
-        List<Condition> conditions = new ArrayList<Condition>();
-        Bundle patientBundle = getClient().search().forResource(Condition.class)
-                .where(Condition.IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
-                .returnBundle(Bundle.class).execute();
-        for (BundleEntryComponent entry : patientBundle.getEntry()) {
-            Condition condition = (Condition) entry.getResource();
-            if (condition != null) {
-                conditions.add(condition);
-            }
-        }
-        return conditions;
-    }
-    
     public void updateCondition(Condition condition) {
         updateResource(condition);
     }
@@ -69,33 +45,14 @@ public class ConditionService extends BaseService {
         return createResource(condition);
     }
     
-    public MethodOutcome addConditionIfNotExist(Condition condition, Identifier identifier) {
+    public MethodOutcome createConditionIfNotExist(Condition condition, Identifier identifier) {
         return createResourceIfNotExist(condition, identifier);
     }
     
-    public List<Condition> searchConditionForPatient(Patient patient) {
-        List<Condition> conditions = new ArrayList<Condition>();
-        System.out.println(FhirUtil.getResourceIdPath(patient));
-        Bundle bundle = getClient().search().forResource(Condition.class)
-                .where(Condition.PATIENT.hasId(FhirUtil.getResourceIdPath(patient))).returnBundle(Bundle.class).execute();
-        for (BundleEntryComponent entry : bundle.getEntry()) {
-            if (entry.getResource() instanceof Condition) {
-                conditions.add((Condition) entry.getResource());//Fix this
-            }
-        }
+    public List<Condition> searchConditionsForPatient(Patient patient) {
+        List<Condition> conditions = searchResourcesForPatient(patient, Condition.class);
         Collections.sort(conditions, Comparators.CONDITION_DATE_RECORDED);
         return conditions;
-    }
-    
-    public void deleteConditionByIdentifier(Identifier identifier) {
-        Bundle conditionBundle = getClient().search()
-                .forResource(Condition.class).where(MedicationAdministration.IDENTIFIER.exactly()
-                        .systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
-                .returnBundle(Bundle.class).execute();
-        List<BundleEntryComponent> entries = conditionBundle.getEntry();
-        for (BundleEntryComponent entry : entries) {
-            getClient().delete().resource(entry.getResource()).execute();
-        }
     }
     
 }

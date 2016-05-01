@@ -19,15 +19,18 @@
  */
 package org.hspconsortium.cwf.fhir.common;
 
+import java.util.List;
+
+import org.hl7.fhir.dstu3.model.Bundle;
 import org.hl7.fhir.dstu3.model.Identifier;
+import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Reference;
-import org.hl7.fhir.instance.model.api.IAnyResource;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 
-import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
+import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 
 public class BaseService {
@@ -35,7 +38,11 @@ public class BaseService {
     
     public static final String SP_IDENTIFIER = "identifier";
     
-    public static final TokenClientParam IDENTIFIER = new TokenClientParam(SP_IDENTIFIER);
+    public static final String SP_PATIENT = "patient";
+    
+    public static final TokenClientParam PARAM_IDENTIFIER = new TokenClientParam(SP_IDENTIFIER);
+    
+    public static final ReferenceClientParam PARAM_PATIENT = new ReferenceClientParam(SP_PATIENT);
     
     private final IGenericClient client;
     
@@ -63,9 +70,10 @@ public class BaseService {
      * @param identifier The resource identifier.
      * @return The outcome of the operation.
      */
-    public MethodOutcome createResourceIfNotExist(IAnyResource resource, Identifier identifier) {
+    public MethodOutcome createResourceIfNotExist(IBaseResource resource, Identifier identifier) {
         return getClient().create().resource(resource).conditional()
-                .where(IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue())).execute();
+                .where(PARAM_IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .execute();
     }
     
     /**
@@ -106,9 +114,64 @@ public class BaseService {
         }
         
         String resourceUrl = expandURL(resourceId);
-        IBaseResource resource = getClient().read(new UriDt(resourceUrl));
+        IBaseResource resource = getClient().read().resource(reference.fhirType()).withUrl(resourceUrl).execute();
         reference.setResource(resource);
         return resource;
+    }
+    
+    /**
+     * Search for patient-based resources of the given class.
+     * 
+     * @param patient Patient to be searched.
+     * @param clazz Class of the resources to be returned.
+     * @return List of matching resources.
+     */
+    public <T extends IBaseResource> List<T> searchResourcesForPatient(Patient patient, Class<T> clazz) {
+        Bundle bundle = getClient().search().forResource(clazz)
+                .where(PARAM_PATIENT.hasId(FhirUtil.getResourceIdPath(patient))).returnBundle(Bundle.class).execute();
+        
+        return FhirUtil.getEntries(bundle, clazz);
+    }
+    
+    /**
+     * Returns all resources of the given class that contain the identifier.
+     * 
+     * @param system The identifier's system.
+     * @param value The identifier's value.
+     * @param clazz Class of the resources to be searched.
+     * @return List of resources containing the identifier.
+     */
+    public <T extends IBaseResource> List<T> searchResourcesByIdentifier(String system, String value, Class<T> clazz) {
+        return searchResourcesByIdentifier(FhirUtil.createIdentifier(system, value), clazz);
+    }
+    
+    /**
+     * Returns all resources of the given class that contain the identifier.
+     * 
+     * @param identifier Resources with this identifier will be returned.
+     * @param clazz Class of the resources to be searched.
+     * @return List of resources containing the identifier.
+     */
+    public <T extends IBaseResource> List<T> searchResourcesByIdentifier(Identifier identifier, Class<T> clazz) {
+        Bundle bundle = getClient().search().forResource(clazz)
+                .where(PARAM_IDENTIFIER.exactly().systemAndIdentifier(identifier.getSystem(), identifier.getValue()))
+                .returnBundle(Bundle.class).execute();
+        
+        return FhirUtil.getEntries(bundle, clazz);
+    }
+    
+    /**
+     * Deletes all resources of the given class that contain the identifier.
+     * 
+     * @param identifier Resources with this identifier will be deleted.
+     * @param clazz Class of the resources to be searched.
+     */
+    public <T extends IBaseResource> void deleteResourcesByIdentifier(Identifier identifier, Class<T> clazz) {
+        List<T> resources = searchResourcesByIdentifier(identifier, clazz);
+        
+        for (T resource : resources) {
+            getClient().delete().resource(resource).execute();
+        }
     }
     
     /**
