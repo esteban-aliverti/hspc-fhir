@@ -1,6 +1,6 @@
 /*
  * #%L
- * cwf-api-documents
+ * cwf-fhir-core
  * %%
  * Copyright (C) 2014 - 2016 Healthcare Services Platform Consortium
  * %%
@@ -29,8 +29,6 @@ import org.carewebframework.common.DateRange;
 import org.carewebframework.common.DateUtil;
 
 import org.hl7.fhir.dstu3.model.Patient;
-import org.hspconsortium.cwf.fhir.document.Document;
-import org.hspconsortium.cwf.fhir.document.DocumentService;
 
 /**
  * Data service wrapper for documents service.

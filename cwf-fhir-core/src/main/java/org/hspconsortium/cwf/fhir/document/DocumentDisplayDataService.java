@@ -1,6 +1,6 @@
 /*
  * #%L
- * cwf-api-documents
+ * cwf-fhir-core
  * %%
  * Copyright (C) 2014 - 2016 Healthcare Services Platform Consortium
  * %%
@@ -25,9 +25,6 @@ import org.carewebframework.api.query.AbstractQueryServiceEx;
 import org.carewebframework.api.query.IQueryContext;
 import org.carewebframework.api.query.IQueryResult;
 import org.carewebframework.api.query.QueryUtil;
-
-import org.hspconsortium.cwf.fhir.document.Document;
-import org.hspconsortium.cwf.fhir.document.DocumentService;
 
 /**
  * Data service wrapper for retrieving document contents.

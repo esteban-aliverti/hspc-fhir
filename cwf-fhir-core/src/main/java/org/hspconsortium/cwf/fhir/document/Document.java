@@ -1,6 +1,6 @@
 /*
  * #%L
- * cwf-api-documents
+ * cwf-fhir-core
  * %%
  * Copyright (C) 2014 - 2016 Healthcare Services Platform Consortium
  * %%
@@ -43,7 +43,7 @@ public class Document implements Comparable<Document> {
     
     private Set<String> types;
     
-    private byte[] content;
+    private List<DocumentContent> content;
     
     public Document(DocumentReference reference) {
         this.documentReference = reference;
@@ -110,7 +110,7 @@ public class Document implements Comparable<Document> {
         return FhirUtil.getFirst(documentReference.getContent()).getAttachment().getContentType();
     }
     
-    public byte[] getContent() {
+    public List<DocumentContent> getContent() {
         if (content == null) {
             content = DocumentService.getInstance().getContent(documentReference);
         }

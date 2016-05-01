@@ -1,6 +1,6 @@
 /*
  * #%L
- * cwf-api-documents
+ * cwf-fhir-core
  * %%
  * Copyright (C) 2014 - 2016 Healthcare Services Platform Consortium
  * %%
@@ -25,11 +25,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.TreeSet;
 
+import org.hl7.fhir.dstu3.model.Attachment;
 import org.hl7.fhir.dstu3.model.Binary;
 import org.hl7.fhir.dstu3.model.Bundle;
 import org.hl7.fhir.dstu3.model.CodeSystem;
 import org.hl7.fhir.dstu3.model.CodeSystem.ConceptDefinitionComponent;
 import org.hl7.fhir.dstu3.model.DocumentReference;
+import org.hl7.fhir.dstu3.model.DocumentReference.DocumentReferenceContentComponent;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hspconsortium.cwf.fhir.common.BaseService;
 import org.hspconsortium.cwf.fhir.common.FhirUtil;
@@ -44,8 +46,6 @@ import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 public class DocumentService extends BaseService {
     
     
-    private static final byte[] EMPTY_CONTENT = {};
-    
     private static DocumentService instance;
     
     public static DocumentService getInstance() {
@@ -58,31 +58,32 @@ public class DocumentService extends BaseService {
     }
     
     /**
-     * Retrieves document content, regardless of type.
+     * Retrieves document contents, regardless of type.
      * 
      * @param documentReference A document reference.
-     * @return Byte content, never null.
+     * @return List of document contents, never null.
      */
-    public byte[] getContent(DocumentReference documentReference) {
-        byte[] content = null;
+    public List<DocumentContent> getContent(DocumentReference documentReference) {
+        List<DocumentContent> contents = new ArrayList<>();
         
-        try {
-            content = FhirUtil.getFirst(documentReference.getContent()).getAttachment().getData();
+        for (DocumentReferenceContentComponent content : documentReference.getContent()) {
+            Attachment attachment = content.getAttachment();
+            byte[] data = attachment.getData();
+            String type = attachment.getContentType();
             
-            if (content == null || content.length == 0) {
-                Binary binary = getClient().read(Binary.class,
-                    FhirUtil.getFirst(documentReference.getContent()).getAttachment().getUrl());
-                content = binary.getContent();
+            if (data == null || data.length == 0) {
+                try {
+                    data = getClient().read(Binary.class, attachment.getUrl()).getContent();
+                } catch (Exception e) {
+                    data = e.getMessage().getBytes();
+                    type = "text/plain";
+                }
             }
-        } catch (Exception e) {
-            content = e.getMessage().getBytes();
+            
+            contents.add(new DocumentContent(data, type));
         }
         
-        if (content == null) {
-            content = EMPTY_CONTENT;
-        }
-        
-        return content;
+        return contents;
     }
     
     /**

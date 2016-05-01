@@ -19,25 +19,32 @@
  */
 package org.hspconsortium.cwf.fhir.document;
 
-import java.util.Iterator;
-
-/**
- * Provides an iterable interface for document types.
- *
- * @author dmartin
- */
-public class DocumentTypeEnumerator implements Iterable<String> {
+public class DocumentContent {
     
     
-    private final DocumentService service;
+    private final byte[] data;
     
-    public DocumentTypeEnumerator(DocumentService service) {
-        this.service = service;
+    private final String type;
+    
+    public DocumentContent(byte[] data, String type) {
+        this.data = data;
+        this.type = type == null ? "" : type.toLowerCase();
+    }
+    
+    public boolean hasContent() {
+        return this.data != null;
+    }
+    
+    public byte[] getData() {
+        return data;
+    }
+    
+    public String getType() {
+        return type;
     }
     
     @Override
-    public Iterator<String> iterator() {
-        return service.getTypes().iterator();
+    public String toString() {
+        return data == null ? null : new String(data);
     }
-    
 }
