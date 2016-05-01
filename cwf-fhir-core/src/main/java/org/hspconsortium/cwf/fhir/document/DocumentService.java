@@ -64,12 +64,18 @@ public class DocumentService extends BaseService {
      * @return Byte content, never null.
      */
     public byte[] getContent(DocumentReference documentReference) {
-        byte[] content = FhirUtil.getFirst(documentReference.getContent()).getAttachment().getData();
+        byte[] content = null;
         
-        if (content == null || content.length == 0) {
-            Binary binary = getClient().read(Binary.class,
-                FhirUtil.getFirst(documentReference.getContent()).getAttachment().getUrl());
-            content = binary.getContent();
+        try {
+            content = FhirUtil.getFirst(documentReference.getContent()).getAttachment().getData();
+            
+            if (content == null || content.length == 0) {
+                Binary binary = getClient().read(Binary.class,
+                    FhirUtil.getFirst(documentReference.getContent()).getAttachment().getUrl());
+                content = binary.getContent();
+            }
+        } catch (Exception e) {
+            content = e.getMessage().getBytes();
         }
         
         if (content == null) {

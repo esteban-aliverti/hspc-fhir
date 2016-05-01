@@ -29,6 +29,7 @@ import org.hl7.fhir.dstu3.model.CodeableConcept;
 import org.hl7.fhir.dstu3.model.Coding;
 import org.hl7.fhir.dstu3.model.DocumentReference;
 import org.hl7.fhir.dstu3.model.DocumentReference.DocumentReferenceContextComponent;
+import org.hl7.fhir.dstu3.model.Practitioner;
 import org.hl7.fhir.dstu3.model.Reference;
 import org.hspconsortium.cwf.fhir.common.FhirUtil;
 
@@ -75,8 +76,9 @@ public class Document implements Comparable<Document> {
     }
     
     public String getAuthorName() {
-        Reference resource = FhirUtil.getFirst(documentReference.getAuthor());
-        return resource == null ? "" : resource.getDisplay().toString();
+        Reference reference = documentReference.hasAuthor() ? FhirUtil.getFirst(documentReference.getAuthor()) : null;
+        Practitioner author = DocumentService.getInstance().getResource(reference, Practitioner.class);
+        return author == null ? "" : FhirUtil.formatName(author.getName());
     }
     
     public Collection<String> getTypes() {

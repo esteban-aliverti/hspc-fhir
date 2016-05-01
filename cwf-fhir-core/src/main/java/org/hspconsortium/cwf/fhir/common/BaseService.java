@@ -91,7 +91,7 @@ public class BaseService {
      * @return The corresponding resource.
      */
     public IBaseResource getResource(Reference reference) {
-        if (reference.isEmpty()) {
+        if (reference == null || reference.isEmpty()) {
             return null;
         }
         

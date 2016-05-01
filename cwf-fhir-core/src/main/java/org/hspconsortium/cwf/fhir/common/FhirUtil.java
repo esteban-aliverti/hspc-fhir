@@ -200,7 +200,7 @@ public class FhirUtil {
                 IBaseResource resource = entry.getResource();
                 
                 if (clazz.isInstance(resource)) {
-                    entries.add((T) entry.getResource());
+                    entries.add((T) resource);
                 }
             }
         }
