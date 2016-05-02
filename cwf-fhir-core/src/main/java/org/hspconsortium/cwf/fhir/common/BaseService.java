@@ -27,6 +27,7 @@ import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 
+import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
@@ -114,7 +115,7 @@ public class BaseService {
         }
         
         String resourceUrl = expandURL(resourceId);
-        IBaseResource resource = getClient().read().resource(reference.fhirType()).withUrl(resourceUrl).execute();
+        IBaseResource resource = getClient().read(new UriDt(resourceUrl));
         reference.setResource(resource);
         return resource;
     }
@@ -165,13 +166,16 @@ public class BaseService {
      * 
      * @param identifier Resources with this identifier will be deleted.
      * @param clazz Class of the resources to be searched.
+     * @return Count of deleted resources.
      */
-    public <T extends IBaseResource> void deleteResourcesByIdentifier(Identifier identifier, Class<T> clazz) {
+    public <T extends IBaseResource> int deleteResourcesByIdentifier(Identifier identifier, Class<T> clazz) {
         List<T> resources = searchResourcesByIdentifier(identifier, clazz);
         
         for (T resource : resources) {
             getClient().delete().resource(resource).execute();
         }
+        
+        return resources.size();
     }
     
     /**
