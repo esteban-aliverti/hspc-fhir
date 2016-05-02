@@ -170,12 +170,19 @@ public class BaseService {
      */
     public <T extends IBaseResource> int deleteResourcesByIdentifier(Identifier identifier, Class<T> clazz) {
         List<T> resources = searchResourcesByIdentifier(identifier, clazz);
-        
+        deleteResources(resources);
+        return resources.size();
+    }
+    
+    /**
+     * Deletes all resources in the provided list.
+     * 
+     * @param resources Resources to delete.
+     */
+    public <T extends IBaseResource> void deleteResources(List<T> resources) {
         for (T resource : resources) {
             getClient().delete().resource(resource).execute();
         }
-        
-        return resources.size();
     }
     
     /**

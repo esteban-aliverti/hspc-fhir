@@ -377,6 +377,21 @@ public class FhirUtil {
     }
     
     /**
+     * Returns identifiers for the given resource, if any.
+     * 
+     * @param resource Resource whose identifiers are sought.
+     * @return List of associated identifier, or null if the resource doesn't support identifiers.
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Identifier> getIdentifiers(IAnyResource resource) {
+        try {
+            return (List<Identifier>) MethodUtils.invokeMethod(resource, "getIdentifier", (Object[]) null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
      * Returns the resource ID relative path from a IdDt datatype.
      * 
      * @param resource The resource.
