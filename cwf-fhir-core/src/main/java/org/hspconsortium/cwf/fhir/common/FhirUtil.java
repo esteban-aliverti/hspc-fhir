@@ -33,6 +33,7 @@ import org.carewebframework.common.DateUtil;
 
 import org.hl7.fhir.dstu3.model.Address;
 import org.hl7.fhir.dstu3.model.Address.AddressUse;
+import org.hl7.fhir.dstu3.model.Annotation;
 import org.hl7.fhir.dstu3.model.Bundle;
 import org.hl7.fhir.dstu3.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.dstu3.model.CodeableConcept;
@@ -494,8 +495,8 @@ public class FhirUtil {
      * @return The string representation of the id.
      */
     public static String getIdAsString(IIdType id, boolean stripVersion) {
-        String result = id.getValueAsString();
-        return stripVersion && id.hasVersionIdPart() ? stripVersion(result) : result;
+        String result = id == null ? null : id.getValueAsString();
+        return result == null ? "" : stripVersion && id.hasVersionIdPart() ? stripVersion(result) : result;
     }
     
     /**
@@ -596,6 +597,10 @@ public class FhirUtil {
     
     public static String getDisplayValue(Reference value) {
         return value.getDisplay();
+    }
+    
+    public static String getDisplayValue(Annotation value) {
+        return value.getText();
     }
     
     public static String getDisplayValue(SimpleQuantity value) {

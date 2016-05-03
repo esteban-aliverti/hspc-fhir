@@ -128,11 +128,11 @@ public class DocumentService extends BaseService {
         //.forResource("Patient/" + patient.getId().getIdPart() + "/DocumentReference");
         
         if (startDate != null) {
-            query.where(DocumentReference.PERIOD.afterOrEquals().day(startDate));
+            query.where(DocumentReference.CREATED.afterOrEquals().day(startDate));
         }
         
         if (endDate != null) {
-            query.where(DocumentReference.PERIOD.beforeOrEquals().day(endDate));
+            query.where(DocumentReference.CREATED.beforeOrEquals().day(endDate));
         }
         
         if (type != null) {
