@@ -76,11 +76,11 @@ public class MedicationService extends BaseService {
         updateResource(medOrder);
     }
     
-    public MethodOutcome createMedicationAdministration(MedicationAdministration medAdmin) {
+    public MedicationAdministration createMedicationAdministration(MedicationAdministration medAdmin) {
         return createResource(medAdmin);
     }
     
-    public MethodOutcome createMedicationOrder(MedicationOrder medOrder) {
+    public MedicationOrder createMedicationOrder(MedicationOrder medOrder) {
         return createResource(medOrder);
     }
     

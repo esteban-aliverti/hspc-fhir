@@ -33,11 +33,11 @@ public class PatientService extends BaseService {
         super(client);
     }
     
-    public void updatePatient(Patient patient) {
-        updateResource(patient);
+    public Patient updatePatient(Patient patient) {
+        return updateResource(patient);
     }
     
-    public MethodOutcome createPatient(Patient patient) {
+    public Patient createPatient(Patient patient) {
         return createResource(patient);
     }
     

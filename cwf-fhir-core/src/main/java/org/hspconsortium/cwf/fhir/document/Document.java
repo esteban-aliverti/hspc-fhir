@@ -19,6 +19,7 @@
  */
 package org.hspconsortium.cwf.fhir.document;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -39,7 +40,7 @@ import org.hspconsortium.cwf.fhir.common.FhirUtil;
 public class Document implements Comparable<Document> {
     
     
-    private final DocumentReference documentReference;
+    private DocumentReference documentReference;
     
     private Set<String> types;
     
@@ -49,8 +50,18 @@ public class Document implements Comparable<Document> {
         this.documentReference = reference;
     }
     
+    public Document(DocumentReference reference, DocumentContent content) {
+        this(reference);
+        this.content = new ArrayList<>();
+        this.content.add(content);
+    }
+    
     public DocumentReference getReference() {
         return documentReference;
+    }
+    
+    protected void setReference(DocumentReference documentReference) {
+        this.documentReference = documentReference;
     }
     
     public String getTitle() {
@@ -81,6 +92,10 @@ public class Document implements Comparable<Document> {
         return author == null ? "" : FhirUtil.formatName(author.getName());
     }
     
+    public String getStatus() {
+        return FhirUtil.getDisplayValue(documentReference.getDocStatus());
+    }
+    
     public Collection<String> getTypes() {
         if (types == null) {
             types = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
@@ -107,7 +122,7 @@ public class Document implements Comparable<Document> {
     }
     
     public String getContentType() {
-        return FhirUtil.getFirst(documentReference.getContent()).getAttachment().getContentType();
+        return FhirUtil.getFirst(getContent()).getType();
     }
     
     public List<DocumentContent> getContent() {

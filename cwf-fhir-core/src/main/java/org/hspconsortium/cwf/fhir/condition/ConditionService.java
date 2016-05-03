@@ -41,7 +41,7 @@ public class ConditionService extends BaseService {
         updateResource(condition);
     }
     
-    public MethodOutcome createCondition(Condition condition) {
+    public Condition createCondition(Condition condition) {
         return createResource(condition);
     }
     

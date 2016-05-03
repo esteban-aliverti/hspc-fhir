@@ -55,12 +55,23 @@ public class BaseService {
         return this.client;
     }
     
-    public void updateResource(IBaseResource resource) {
-        getClient().update().resource(resource).execute();
+    public <T extends IBaseResource> T updateResource(T resource) {
+        getClient().update().resource(FhirUtil.stripVersion(resource)).execute();
+        return resource;
     }
     
-    public MethodOutcome createResource(IBaseResource resource) {
-        return getClient().create().resource(resource).execute();
+    @SuppressWarnings("unchecked")
+    public <T extends IBaseResource> T createResource(T resource) {
+        return (T) extractResource(getClient().create().resource(resource).execute(), resource.getClass());
+    }
+    
+    public <T extends IBaseResource> T createOrUpdateResource(T resource) {
+        return resource.getIdElement().isEmpty() ? createResource(resource) : updateResource(resource);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private <T> T extractResource(MethodOutcome outcome, Class<T> clazz) {
+        return clazz.isInstance(outcome.getResource()) ? (T) outcome.getResource() : null;
     }
     
     /**
@@ -181,8 +192,17 @@ public class BaseService {
      */
     public <T extends IBaseResource> void deleteResources(List<T> resources) {
         for (T resource : resources) {
-            getClient().delete().resource(resource).execute();
+            deleteResource(resource);
         }
+    }
+    
+    /**
+     * Deletes a resource.
+     * 
+     * @param resource Resource to delete.
+     */
+    public void deleteResource(IBaseResource resource) {
+        getClient().delete().resource(resource).execute();
     }
     
     /**

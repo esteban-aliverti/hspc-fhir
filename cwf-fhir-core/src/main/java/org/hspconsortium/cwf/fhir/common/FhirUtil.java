@@ -510,6 +510,23 @@ public class FhirUtil {
     }
     
     /**
+     * Strips the version qualifier from a resource, if present.
+     * 
+     * @param resource The resource.
+     * @return The input resource, possibly modified.
+     */
+    public static <T extends IBaseResource> T stripVersion(T resource) {
+        IIdType id = resource.getIdElement();
+        
+        if (id.hasVersionIdPart()) {
+            id.setValue(stripVersion(id.getValue()));
+            resource.setId(id);
+        }
+        
+        return resource;
+    }
+    
+    /**
      * Method returns true if two quantities are equal. Compares two quantities by comparing their
      * values and their units. TODO Do a comparator instead
      * 
@@ -540,7 +557,7 @@ public class FhirUtil {
      */
     public static String getDisplayValue(CodeableConcept value) {
         Coding coding = FhirUtil.getFirst(value.getCoding());
-        String result = coding.getDisplay();
+        String result = coding == null ? "" : coding.getDisplay();
         return result == null ? coding.getCode() : result;
     }
     

@@ -87,6 +87,31 @@ public class DocumentService extends BaseService {
     }
     
     /**
+     * Updates or creates the document.
+     * 
+     * @param document Document to update.
+     */
+    public void updateDocument(Document document) {
+        DocumentReference ref = document.getReference();
+        ref.getContent().clear();
+        
+        for (DocumentContent content : document.getContent()) {
+            Attachment attachment = new Attachment();
+            attachment.setContentType(content.getType());
+            attachment.setData(content.getData());
+            DocumentReferenceContentComponent cc = new DocumentReferenceContentComponent(attachment);
+            ref.getContent().add(cc);
+        }
+        
+        ref = this.createOrUpdateResource(ref);
+        
+        if (ref != null) {
+            document.setReference(ref);
+        }
+        
+    }
+    
+    /**
      * Retrieves document references for a given patient.
      * 
      * @param patient Patient whose documents are to be retrieved.
