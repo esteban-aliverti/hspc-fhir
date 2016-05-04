@@ -221,7 +221,7 @@ public class BaseService {
      * @return URL with a service root prepended.
      */
     public String expandURL(String url) {
-        return url.matches("^.+:/") ? url : FhirUtil.concatPath(getServiceRoot(), url);
+        return url.contains(":/") ? url : FhirUtil.concatPath(getServiceRoot(), url);
     }
     
 }
