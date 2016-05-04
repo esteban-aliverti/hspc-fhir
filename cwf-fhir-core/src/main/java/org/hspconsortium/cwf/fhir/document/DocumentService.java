@@ -70,17 +70,20 @@ public class DocumentService extends BaseService {
             Attachment attachment = content.getAttachment();
             byte[] data = attachment.getData();
             String type = attachment.getContentType();
+            String url = attachment.getUrl();
             
-            if (data == null || data.length == 0) {
+            if ((data == null || data.length == 0) && url != null) {
                 try {
-                    data = getClient().read(Binary.class, attachment.getUrl()).getContent();
+                    data = getClient().read(Binary.class, url).getContent();
                 } catch (Exception e) {
                     data = e.getMessage().getBytes();
-                    type = "text/plain";
+                    type = "text/x-error";
                 }
             }
             
-            contents.add(new DocumentContent(data, type));
+            if (data != null) {
+                contents.add(new DocumentContent(data, type));
+            }
         }
         
         return contents;
@@ -96,11 +99,13 @@ public class DocumentService extends BaseService {
         ref.getContent().clear();
         
         for (DocumentContent content : document.getContent()) {
-            Attachment attachment = new Attachment();
-            attachment.setContentType(content.getType());
-            attachment.setData(content.getData());
-            DocumentReferenceContentComponent cc = new DocumentReferenceContentComponent(attachment);
-            ref.getContent().add(cc);
+            if (!content.isEmpty()) {
+                Attachment attachment = new Attachment();
+                attachment.setContentType(content.getContentType());
+                attachment.setData(content.getData());
+                DocumentReferenceContentComponent cc = new DocumentReferenceContentComponent(attachment);
+                ref.getContent().add(cc);
+            }
         }
         
         ref = this.createOrUpdateResource(ref);

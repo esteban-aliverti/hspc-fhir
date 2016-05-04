@@ -24,11 +24,11 @@ public class DocumentContent {
     
     private final byte[] data;
     
-    private final String type;
+    private final String contentType;
     
-    public DocumentContent(byte[] data, String type) {
+    public DocumentContent(byte[] data, String contentType) {
         this.data = data;
-        this.type = type == null ? "" : type.toLowerCase();
+        this.contentType = contentType == null ? "" : contentType.toLowerCase();
     }
     
     public boolean hasContent() {
@@ -39,8 +39,12 @@ public class DocumentContent {
         return data;
     }
     
-    public String getType() {
-        return type;
+    public String getContentType() {
+        return contentType;
+    }
+    
+    public boolean isEmpty() {
+        return data == null || data.length == 0 || "text/x-error".equals(contentType);
     }
     
     @Override

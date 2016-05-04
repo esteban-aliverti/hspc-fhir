@@ -26,6 +26,7 @@ import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.instance.model.api.IIdType;
 
 import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
@@ -56,13 +57,13 @@ public class BaseService {
     }
     
     public <T extends IBaseResource> T updateResource(T resource) {
-        getClient().update().resource(FhirUtil.stripVersion(resource)).execute();
-        return resource;
+        MethodOutcome outcome = getClient().update().resource(FhirUtil.stripVersion(resource)).execute();
+        return processOutcome(outcome, resource);
     }
     
-    @SuppressWarnings("unchecked")
     public <T extends IBaseResource> T createResource(T resource) {
-        return (T) extractResource(getClient().create().resource(resource).execute(), resource.getClass());
+        MethodOutcome outcome = getClient().create().resource(resource).execute();
+        return processOutcome(outcome, resource);
     }
     
     public <T extends IBaseResource> T createOrUpdateResource(T resource) {
@@ -70,8 +71,17 @@ public class BaseService {
     }
     
     @SuppressWarnings("unchecked")
-    private <T> T extractResource(MethodOutcome outcome, Class<T> clazz) {
-        return clazz.isInstance(outcome.getResource()) ? (T) outcome.getResource() : null;
+    private <T extends IBaseResource> T processOutcome(MethodOutcome outcome, T resource) {
+        IIdType id = outcome.getId();
+        IBaseResource newResource = outcome.getResource();
+        
+        if (id != null) {
+            resource.setId(id);
+        } else if (newResource != null && newResource.getClass() == resource.getClass()) {
+            resource = (T) newResource;
+        }
+        
+        return resource;
     }
     
     /**

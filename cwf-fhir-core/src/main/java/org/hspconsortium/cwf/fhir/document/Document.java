@@ -122,7 +122,7 @@ public class Document implements Comparable<Document> {
     }
     
     public String getContentType() {
-        return FhirUtil.getFirst(getContent()).getType();
+        return FhirUtil.getFirst(getContent()).getContentType();
     }
     
     public List<DocumentContent> getContent() {
