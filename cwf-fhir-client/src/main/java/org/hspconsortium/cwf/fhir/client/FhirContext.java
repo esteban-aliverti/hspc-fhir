@@ -129,6 +129,12 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
         return authInterceptor;
     }
     
+    /**
+     * Supports registering special http clients to handle requests based on URL patterns.
+     * 
+     * @param pattern Url pattern
+     * @param client
+     */
     public void registerHttpClient(String pattern, HttpClient client) {
         getRestfulClientFactory().getNativeHttpClient().registerHttpClient(pattern, client);
     }

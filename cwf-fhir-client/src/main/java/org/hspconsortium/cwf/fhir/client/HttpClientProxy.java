@@ -37,7 +37,10 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.UriPatternMatcher;
 
 /**
- * Http client proxy to allow registration of custom clients based on url patterns.
+ * Http client proxy to allow registration of request interceptors based on url patterns. This
+ * capability allows one to create custom http clients to handle certain requests. In the absence of
+ * a url match, it delegates requests to the usual http client. See {@link UriPatternMatcher} for
+ * information on url patterns.
  */
 @SuppressWarnings("deprecation")
 public class HttpClientProxy implements HttpClient, Closeable {

@@ -22,7 +22,8 @@ package org.hspconsortium.cwf.fhir.client;
 import ca.uhn.fhir.rest.client.apache.ApacheRestfulClientFactory;
 
 /**
- * Subclass RestfulClientFactory to return http client proxy.
+ * Subclass RestfulClientFactory to return http client proxy. See {@link HttpClientProxy} for more
+ * information).
  */
 public class RestfulClientFactory extends ApacheRestfulClientFactory {
     
