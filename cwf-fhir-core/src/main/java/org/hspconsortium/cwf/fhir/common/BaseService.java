@@ -39,13 +39,9 @@ import ca.uhn.fhir.rest.gclient.TokenClientParam;
 public class BaseService {
     
     
-    public static final String SP_TAG = "_tag";
-    
     public static final String SP_IDENTIFIER = "identifier";
     
     public static final String SP_PATIENT = "patient";
-    
-    public static final TokenClientParam PARAM_TAG = new TokenClientParam(SP_TAG);
     
     public static final TokenClientParam PARAM_IDENTIFIER = new TokenClientParam(SP_IDENTIFIER);
     
@@ -195,9 +191,8 @@ public class BaseService {
      * @return List of resources containing the tag.
      */
     public <T extends IBaseResource> List<T> searchResourcesByTag(Tag tag, Class<T> clazz) {
-        Bundle bundle = getClient().search().forResource(clazz)
-                .where(PARAM_TAG.exactly().systemAndCode(tag.getSystem(), tag.getCode())).returnBundle(Bundle.class)
-                .execute();
+        Bundle bundle = getClient().search().forResource(clazz).withTag(tag.getSystem(), tag.getCode())
+                .returnBundle(Bundle.class).execute();
         
         return FhirUtil.getEntries(bundle, clazz);
     }
