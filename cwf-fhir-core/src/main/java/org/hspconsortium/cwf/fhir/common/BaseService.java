@@ -28,6 +28,7 @@ import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
 
+import ca.uhn.fhir.model.api.Tag;
 import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.GenericClient;
@@ -38,9 +39,13 @@ import ca.uhn.fhir.rest.gclient.TokenClientParam;
 public class BaseService {
     
     
+    public static final String SP_TAG = "_tag";
+    
     public static final String SP_IDENTIFIER = "identifier";
     
     public static final String SP_PATIENT = "patient";
+    
+    public static final TokenClientParam PARAM_TAG = new TokenClientParam(SP_TAG);
     
     public static final TokenClientParam PARAM_IDENTIFIER = new TokenClientParam(SP_IDENTIFIER);
     
@@ -183,6 +188,21 @@ public class BaseService {
     }
     
     /**
+     * Returns all resources of the given class that contain the tag.
+     * 
+     * @param tag Resources with this tag will be returned.
+     * @param clazz Class of the resources to be searched.
+     * @return List of resources containing the tag.
+     */
+    public <T extends IBaseResource> List<T> searchResourcesByTag(Tag tag, Class<T> clazz) {
+        Bundle bundle = getClient().search().forResource(clazz)
+                .where(PARAM_TAG.exactly().systemAndCode(tag.getSystem(), tag.getCode())).returnBundle(Bundle.class)
+                .execute();
+        
+        return FhirUtil.getEntries(bundle, clazz);
+    }
+    
+    /**
      * Deletes all resources of the given class that contain the identifier.
      * 
      * @param identifier Resources with this identifier will be deleted.
@@ -191,6 +211,19 @@ public class BaseService {
      */
     public <T extends IBaseResource> int deleteResourcesByIdentifier(Identifier identifier, Class<T> clazz) {
         List<T> resources = searchResourcesByIdentifier(identifier, clazz);
+        deleteResources(resources);
+        return resources.size();
+    }
+    
+    /**
+     * Deletes all resources of the given class that contain the identifier.
+     * 
+     * @param tag Resources with this tag will be deleted.
+     * @param clazz Class of the resources to be searched.
+     * @return Count of deleted resources.
+     */
+    public <T extends IBaseResource> int deleteResourcesByTag(Tag tag, Class<T> clazz) {
+        List<T> resources = searchResourcesByTag(tag, clazz);
         deleteResources(resources);
         return resources.size();
     }

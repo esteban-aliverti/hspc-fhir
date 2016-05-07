@@ -53,6 +53,7 @@ import org.hl7.fhir.dstu3.model.Timing;
 import org.hl7.fhir.dstu3.model.Timing.TimingRepeatComponent;
 import org.hl7.fhir.dstu3.model.Timing.UnitsOfTime;
 import org.hl7.fhir.instance.model.api.IAnyResource;
+import org.hl7.fhir.instance.model.api.IBaseCoding;
 import org.hl7.fhir.instance.model.api.IBaseDatatype;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
@@ -424,6 +425,44 @@ public class FhirUtil {
         } catch (Exception e) {
             throw new RuntimeException("Error deserializing file " + resourceName, e);
         }
+    }
+    
+    /**
+     * Adds a tag to a resource if not already present.
+     * 
+     * @param tag Tag to add.
+     * @param resource Resource to receive tag.
+     * @return True if the tag was added.
+     */
+    public static boolean addTag(IBaseCoding tag, IBaseResource resource) {
+        boolean exists = resource.getMeta().getTag(tag.getSystem(), tag.getCode()) != null;
+        
+        if (!exists) {
+            IBaseCoding newTag = resource.getMeta().addTag();
+            newTag.setCode(tag.getCode());
+            newTag.setSystem(tag.getSystem());
+            newTag.setDisplay(tag.getDisplay());
+        }
+        
+        return !exists;
+    }
+    
+    /**
+     * Removes a tag from a resource if present.
+     * 
+     * @param tag Tag to remove.
+     * @param resource Resource to containing tag.
+     * @return True if the tag was removed.
+     */
+    public static boolean removeTag(IBaseCoding tag, IBaseResource resource) {
+        IBaseCoding theTag = resource.getMeta().getTag(tag.getSystem(), tag.getCode());
+        
+        if (theTag != null) {
+            resource.getMeta().getTag().remove(theTag);
+            return true;
+        }
+        
+        return false;
     }
     
     /**
