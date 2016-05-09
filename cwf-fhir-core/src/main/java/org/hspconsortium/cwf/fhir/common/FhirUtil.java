@@ -52,7 +52,6 @@ import org.hl7.fhir.dstu3.model.SimpleQuantity;
 import org.hl7.fhir.dstu3.model.Timing;
 import org.hl7.fhir.dstu3.model.Timing.TimingRepeatComponent;
 import org.hl7.fhir.dstu3.model.Timing.UnitsOfTime;
-import org.hl7.fhir.instance.model.api.IAnyResource;
 import org.hl7.fhir.instance.model.api.IBaseCoding;
 import org.hl7.fhir.instance.model.api.IBaseDatatype;
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -385,12 +384,53 @@ public class FhirUtil {
      * @return List of associated identifier, or null if the resource doesn't support identifiers.
      */
     @SuppressWarnings("unchecked")
-    public static List<Identifier> getIdentifiers(IAnyResource resource) {
+    public static List<Identifier> getIdentifiers(IBaseResource resource) {
+        return getProperty(resource, "getIdentifier", List.class);
+    }
+    
+    /**
+     * Returns the patient associated with a resource.
+     * 
+     * @param resource Resource whose associated patient is sought.
+     * @return A patient resource.
+     */
+    public static Reference getPatient(IBaseResource resource) {
+        Reference ref = getProperty(resource, "getPatient", Reference.class);
+        ref = ref != null ? ref : getProperty(resource, "getSubject", Reference.class);
+        return ref == null || !ref.hasReference() ? null
+                : "Patient".equals(getResourceType(ref.getReferenceElement())) ? ref : null;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static <T> T getProperty(IBaseResource resource, String getter, Class<T> expectedClass) {
+        Object result = null;
+        
         try {
-            return (List<Identifier>) MethodUtils.invokeMethod(resource, "getIdentifier", (Object[]) null);
-        } catch (Exception e) {
-            return null;
-        }
+            result = MethodUtils.invokeMethod(resource, getter, (Object[]) null);
+            result = result == null || expectedClass == null ? result : expectedClass.isInstance(result) ? result : null;
+        } catch (Exception e) {}
+        
+        return (T) result;
+    }
+    
+    /**
+     * Extracts a resource type from an id.
+     * 
+     * @param id Identifier.
+     * @return The resource type.
+     */
+    public static String getResourceType(IIdType id) {
+        return id == null || id.isEmpty() ? null : id.getResourceType();
+    }
+    
+    /**
+     * Returns the resource type from a resource.
+     * 
+     * @param resource The resource.
+     * @return The type of resource.
+     */
+    public static String getResourceType(IBaseResource resource) {
+        return resource == null ? null : getResourceType(resource.getIdElement());
     }
     
     /**
@@ -399,7 +439,7 @@ public class FhirUtil {
      * @param resource The resource.
      * @return The resource's relative path.
      */
-    public static String getResourceIdPath(IAnyResource resource) {
+    public static String getResourceIdPath(IBaseResource resource) {
         return resource.getIdElement().getResourceType() + "/" + resource.getIdElement().getIdPart();
     }
     
@@ -495,7 +535,7 @@ public class FhirUtil {
      * @param res2 The second resource.
      * @return True if the two resources have equal id's.
      */
-    public static <T extends IAnyResource> boolean areEqual(T res1, T res2) {
+    public static <T extends IBaseResource> boolean areEqual(T res1, T res2) {
         return areEqual(res1, res2, false);
     }
     
@@ -507,7 +547,7 @@ public class FhirUtil {
      * @param ignoreVersion If true, ignore any version qualifiers in the comparison.
      * @return True if the two resources have equal id's.
      */
-    public static <T extends IAnyResource> boolean areEqual(T res1, T res2, boolean ignoreVersion) {
+    public static <T extends IBaseResource> boolean areEqual(T res1, T res2, boolean ignoreVersion) {
         if (res1 == null || res2 == null) {
             return false;
         }
@@ -522,7 +562,7 @@ public class FhirUtil {
      * @param stripVersion If true and the id has a version qualifier, remove it.
      * @return The string representation of the resource's id.
      */
-    public static <T extends IAnyResource> String getIdAsString(T resource, boolean stripVersion) {
+    public static <T extends IBaseResource> String getIdAsString(T resource, boolean stripVersion) {
         return getIdAsString(resource.getIdElement(), stripVersion);
     }
     
