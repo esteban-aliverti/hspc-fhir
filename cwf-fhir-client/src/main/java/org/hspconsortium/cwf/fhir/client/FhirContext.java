@@ -28,7 +28,6 @@ import org.apache.http.client.HttpClient;
 import ca.uhn.fhir.context.FhirVersionEnum;
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
-import ca.uhn.fhir.rest.server.EncodingEnum;
 
 /**
  * Subclasses FhirContext to allow custom RestfulClientFactory and to support various authentication
@@ -54,40 +53,37 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
     }
     
     public FhirContext() {
-        this(null, null);
+        super();
+        proxy = null;
     }
     
-    public FhirContext(FhirVersionEnum fhirVersion) {
-        this(fhirVersion, null);
+    public FhirContext(IFhirContextConfigurator config) {
+        super(config.getVersion());
+        proxy = StringUtils.trimToNull(config.getProxy());
     }
     
-    public FhirContext(FhirVersionEnum fhirVersion, String proxy) {
-        super(fhirVersion);
-        this.proxy = StringUtils.trimToNull(proxy);
+    public FhirContext(FhirVersionEnum version) {
+        super(version);
+        proxy = null;
     }
     
     /**
      * Creates a generic client.
      * 
-     * @param serverBase The service root url.
-     * @param authId The authentication interceptor id (null or empty for none)
-     * @param validateConformance If true, validate the server conformance.
-     * @param encoding The encoding type for client requests.
-     * @param prettyPrint The pretty print setting.
+     * @param config A FHIR configurator.
      * @return The newly created generic client.
      */
-    public IGenericClient newRestfulGenericClient(String serverBase, String authId, boolean validateConformance,
-                                                  EncodingEnum encoding, boolean prettyPrint) {
-        IGenericClient client = super.newRestfulGenericClient(serverBase);
-        ((GenericClient) client).setDontValidateConformance(!validateConformance);
-        IAuthInterceptor authInterceptor = getAuthInterceptor(authId);
+    public IGenericClient newRestfulGenericClient(IFhirClientConfigurator config) {
+        IGenericClient client = super.newRestfulGenericClient(config.getRootUrl());
+        ((GenericClient) client).setDontValidateConformance(!config.isValidateConformance());
+        IAuthInterceptor authInterceptor = getAuthInterceptor(config.getAuthenticationType());
         
         if (authInterceptor != null) {
             client.registerInterceptor(authInterceptor);
         }
         
-        client.setPrettyPrint(prettyPrint);
-        client.setEncoding(encoding);
+        client.setPrettyPrint(config.isPrettyPrint());
+        client.setEncoding(config.getEncoding());
         return client;
     }
     
@@ -133,7 +129,7 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
      * Supports registering special http clients to handle requests based on URL patterns.
      * 
      * @param pattern Url pattern
-     * @param client
+     * @param client The http client.
      */
     public void registerHttpClient(String pattern, HttpClient client) {
         getRestfulClientFactory().getNativeHttpClient().registerHttpClient(pattern, client);

@@ -11,17 +11,14 @@
 	<beans profile="root">
 	
 		<!-- FHIR context and client -->
+		<bean id="fhirConfigurator" class="org.hspconsortium.cwf.fhir.common.FhirConfigurator" />
+		
 		<bean id="fhirContext" class="org.hspconsortium.cwf.fhir.client.FhirContext">
-			<constructor-arg value="${fhir.version:DSTU3}" />
-			<constructor-arg value="${fhir.service.proxy:}" />
+			<constructor-arg ref="fhirConfigurator" />
 		</bean>
 		
 		<bean id="fhirClient" factory-bean="fhirContext" factory-method="newRestfulGenericClient">
-			<constructor-arg value="${fhir.service.root.url}" />
-			<constructor-arg value="${fhir.service.authentication.type:}" />
-			<constructor-arg value="${fhir.service.validate.conformance:true}" />
-			<constructor-arg value="${fhir.client.encoding:}" />
-			<constructor-arg value="${fhir.client.prettyprint:false}" />
+			<constructor-arg ref="fhirConfigurator" />
 		</bean>
 		
 		<bean id="fhirService" class="org.hspconsortium.cwf.fhir.common.BaseService">
