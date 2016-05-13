@@ -222,7 +222,7 @@ public class BaseService {
      * Deletes all resources of the given class that contain the tag.
      * 
      * @param tag Resources with this tag will be deleted.
-     * @param clazz Class of the resources to be searched.
+     * @param clazz Class of the resources to be searched (null for all).
      * @return Count of deleted resources.
      */
     public <T extends IBaseResource> int deleteResourcesByTag(Tag tag, Class<T> clazz) {

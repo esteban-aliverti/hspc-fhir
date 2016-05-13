@@ -69,6 +69,30 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 public class FhirUtil {
     
     
+    public static class OperationOutcomeException extends RuntimeException {
+        
+        
+        private static final long serialVersionUID = 1L;
+        
+        private final OperationOutcome operationOutcome;
+        
+        private final IssueSeverity severity;
+        
+        private OperationOutcomeException(String message, IssueSeverity severity, OperationOutcome operationOutcome) {
+            super(message);
+            this.severity = severity;
+            this.operationOutcome = operationOutcome;
+        }
+        
+        public OperationOutcome getOperationOutcome() {
+            return operationOutcome;
+        }
+        
+        public IssueSeverity getSeverity() {
+            return severity;
+        }
+    }
+    
     public static IHumanNameParser defaultHumanNameParser = new HumanNameParser();
     
     /**
@@ -791,22 +815,27 @@ public class FhirUtil {
      * 
      * @param resource The resource returned by a server request.
      * @return Returns true if the resource was an OperationOutcome with no critical issues.
+     * @throws OperationOutcomeException Exception if severity was ERROR or FATAL.
      */
     public static boolean checkOutcome(IBaseResource resource) {
         if (resource instanceof OperationOutcome) {
             OperationOutcome outcome = (OperationOutcome) resource;
+            IssueSeverity severity = IssueSeverity.NULL;
             
             if (outcome.hasIssue()) {
                 StringBuilder sb = new StringBuilder();
                 
                 for (OperationOutcomeIssueComponent issue : outcome.getIssue()) {
-                    if (issue.getSeverity() == IssueSeverity.ERROR || issue.getSeverity() == IssueSeverity.FATAL) {
-                        sb.append(issue.getDiagnostics()).append('\n');
+                    IssueSeverity theSeverity = issue.getSeverity();
+                    
+                    if (theSeverity == IssueSeverity.ERROR || theSeverity == IssueSeverity.FATAL) {
+                        sb.append(issue.getDiagnostics()).append(" (").append(theSeverity.getDisplay()).append(")\n");
+                        severity = theSeverity.ordinal() < severity.ordinal() ? theSeverity : severity;
                     }
                 }
                 
                 if (sb.length() != 0) {
-                    throw new RuntimeException(sb.toString());
+                    throw new OperationOutcomeException(sb.toString(), severity, outcome);
                 }
                 
             }
