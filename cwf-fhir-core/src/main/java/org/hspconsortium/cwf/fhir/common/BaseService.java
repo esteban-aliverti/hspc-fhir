@@ -26,7 +26,6 @@ import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.instance.model.api.IBaseResource;
-import org.hl7.fhir.instance.model.api.IIdType;
 
 import ca.uhn.fhir.model.api.Tag;
 import ca.uhn.fhir.model.primitive.UriDt;
@@ -59,30 +58,16 @@ public class BaseService {
     
     public <T extends IBaseResource> T updateResource(T resource) {
         MethodOutcome outcome = getClient().update().resource(FhirUtil.stripVersion(resource)).execute();
-        return processOutcome(outcome, resource);
+        return FhirUtil.processMethodOutcome(outcome, resource);
     }
     
     public <T extends IBaseResource> T createResource(T resource) {
         MethodOutcome outcome = getClient().create().resource(resource).execute();
-        return processOutcome(outcome, resource);
+        return FhirUtil.processMethodOutcome(outcome, resource);
     }
     
     public <T extends IBaseResource> T createOrUpdateResource(T resource) {
         return resource.getIdElement().isEmpty() ? createResource(resource) : updateResource(resource);
-    }
-    
-    @SuppressWarnings("unchecked")
-    private <T extends IBaseResource> T processOutcome(MethodOutcome outcome, T resource) {
-        IIdType id = outcome.getId();
-        IBaseResource newResource = outcome.getResource();
-        
-        if (id != null) {
-            resource.setId(id);
-        } else if (newResource != null && newResource.getClass() == resource.getClass()) {
-            resource = (T) newResource;
-        }
-        
-        return resource;
     }
     
     /**
@@ -184,6 +169,19 @@ public class BaseService {
     }
     
     /**
+     * Returns all resources that contain the tag.
+     * 
+     * @param tag Resources with this tag will be returned.
+     * @return List of resources containing the tag.
+     */
+    public List<IBaseResource> searchResourcesByTag(Tag tag) {
+        Bundle bundle = getClient().search().forAllResources().withTag(tag.getSystem(), tag.getCode())
+                .returnBundle(Bundle.class).execute();
+        
+        return FhirUtil.getEntries(bundle, IBaseResource.class);
+    }
+    
+    /**
      * Returns all resources of the given class that contain the tag.
      * 
      * @param tag Resources with this tag will be returned.
@@ -211,14 +209,25 @@ public class BaseService {
     }
     
     /**
-     * Deletes all resources of the given class that contain the identifier.
+     * Deletes all resources contain the tag.
+     * 
+     * @param tag Resources with this tag will be deleted.
+     * @return Count of deleted resources.
+     */
+    public int deleteResourcesByTag(Tag tag) {
+        return deleteResourcesByTag(tag, null);
+    }
+    
+    /**
+     * Deletes all resources of the given class that contain the tag.
      * 
      * @param tag Resources with this tag will be deleted.
      * @param clazz Class of the resources to be searched.
      * @return Count of deleted resources.
      */
     public <T extends IBaseResource> int deleteResourcesByTag(Tag tag, Class<T> clazz) {
-        List<T> resources = searchResourcesByTag(tag, clazz);
+        List<? extends IBaseResource> resources = clazz == null ? searchResourcesByTag(tag)
+                : searchResourcesByTag(tag, clazz);
         deleteResources(resources);
         return resources.size();
     }
@@ -228,8 +237,8 @@ public class BaseService {
      * 
      * @param resources Resources to delete.
      */
-    public <T extends IBaseResource> void deleteResources(List<T> resources) {
-        for (T resource : resources) {
+    public void deleteResources(List<? extends IBaseResource> resources) {
+        for (IBaseResource resource : resources) {
             deleteResource(resource);
         }
     }
