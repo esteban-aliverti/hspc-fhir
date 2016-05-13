@@ -198,8 +198,9 @@ public class FhirUtil {
      * @param clazz Class of resource to extract.
      * @return The list of extracted resources.
      */
+    @SuppressWarnings("unchecked")
     public static <T extends IBaseResource> List<T> getEntries(Bundle bundle, Class<T> clazz) {
-        return getEntries(bundle, Collections.singletonList(clazz), null);
+        return (List<T>) getEntries(bundle, Collections.singletonList(clazz), null);
     }
     
     /**
@@ -212,10 +213,9 @@ public class FhirUtil {
      *            should be excluded. Exclusions take precedence over inclusions.
      * @return The list of extracted resources.
      */
-    @SuppressWarnings("unchecked")
-    public static <T extends IBaseResource> List<T> getEntries(Bundle bundle, List<Class<T>> inclusions,
-                                                               List<Class<T>> exclusions) {
-        List<T> entries = new ArrayList<>();
+    public static <T extends IBaseResource> List<IBaseResource> getEntries(Bundle bundle, List<Class<T>> inclusions,
+                                                                           List<Class<T>> exclusions) {
+        List<IBaseResource> entries = new ArrayList<>();
         
         if (bundle != null) {
             for (BundleEntryComponent entry : bundle.getEntry()) {
@@ -224,7 +224,7 @@ public class FhirUtil {
                 boolean include = !exclude && (inclusions == null || classMatches(inclusions, resource));
                 
                 if (include) {
-                    entries.add((T) resource);
+                    entries.add(resource);
                 }
             }
         }

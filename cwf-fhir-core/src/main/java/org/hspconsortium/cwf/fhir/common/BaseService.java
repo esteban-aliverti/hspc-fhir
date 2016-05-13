@@ -178,7 +178,7 @@ public class BaseService {
         Bundle bundle = getClient().search().forAllResources().withTag(tag.getSystem(), tag.getCode())
                 .returnBundle(Bundle.class).execute();
         
-        return FhirUtil.getEntries(bundle, IBaseResource.class);
+        return FhirUtil.getEntries(bundle, null, null);
     }
     
     /**
