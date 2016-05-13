@@ -22,6 +22,7 @@ package org.hspconsortium.cwf.fhir.common;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -44,6 +45,9 @@ import org.hl7.fhir.dstu3.model.DateType;
 import org.hl7.fhir.dstu3.model.HumanName;
 import org.hl7.fhir.dstu3.model.HumanName.NameUse;
 import org.hl7.fhir.dstu3.model.Identifier;
+import org.hl7.fhir.dstu3.model.OperationOutcome;
+import org.hl7.fhir.dstu3.model.OperationOutcome.IssueSeverity;
+import org.hl7.fhir.dstu3.model.OperationOutcome.OperationOutcomeIssueComponent;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Period;
 import org.hl7.fhir.dstu3.model.Quantity;
@@ -56,6 +60,8 @@ import org.hl7.fhir.instance.model.api.IBaseCoding;
 import org.hl7.fhir.instance.model.api.IBaseDatatype;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
+
+import ca.uhn.fhir.rest.api.MethodOutcome;
 
 /**
  * Domain object utility methods.
@@ -186,27 +192,61 @@ public class FhirUtil {
     }
     
     /**
-     * Extracts the list of resources from a bundle.
+     * Extracts resources of the specified class from a bundle.
      * 
      * @param bundle The bundle.
      * @param clazz Class of resource to extract.
      * @return The list of extracted resources.
      */
-    @SuppressWarnings("unchecked")
     public static <T extends IBaseResource> List<T> getEntries(Bundle bundle, Class<T> clazz) {
-        List<T> entries = new ArrayList<T>();
+        return getEntries(bundle, Collections.singletonList(clazz), null);
+    }
+    
+    /**
+     * Extracts resources from a bundle according to the inclusion and exclusion criteria.
+     * 
+     * @param bundle The bundle.
+     * @param inclusions List of resource classes to extract. May be null to indicate all classes
+     *            should be extracted.
+     * @param exclusions List of resource classes to be excluded. May be null to indicate no classes
+     *            should be excluded. Exclusions take precedence over inclusions.
+     * @return The list of extracted resources.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IBaseResource> List<T> getEntries(Bundle bundle, List<Class<T>> inclusions,
+                                                               List<Class<T>> exclusions) {
+        List<T> entries = new ArrayList<>();
         
         if (bundle != null) {
             for (BundleEntryComponent entry : bundle.getEntry()) {
                 IBaseResource resource = entry.getResource();
+                boolean exclude = exclusions != null && classMatches(exclusions, resource);
+                boolean include = !exclude && (inclusions == null || classMatches(inclusions, resource));
                 
-                if (clazz.isInstance(resource)) {
+                if (include) {
                     entries.add((T) resource);
                 }
             }
         }
         
         return entries;
+    }
+    
+    /**
+     * Returns true if the resource is assignment-compatible with one of the classes list.
+     * 
+     * @param classes List of classes to check.
+     * @param resource The resource to test.
+     * @return True if the resource is assignment-compatible with one of the classes in the list.
+     */
+    private static <T extends IBaseResource> boolean classMatches(List<Class<T>> classes, IBaseResource resource) {
+        for (Class<T> clazz : classes) {
+            if (clazz.isInstance(resource)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     /**
@@ -324,7 +364,7 @@ public class FhirUtil {
      * @return A list of string equivalents.
      */
     public static List<String> toStringList(List<?> source) {
-        List<String> dest = new ArrayList<String>(source.size());
+        List<String> dest = new ArrayList<>(source.size());
         
         for (Object value : source) {
             dest.add(value.toString());
@@ -742,6 +782,65 @@ public class FhirUtil {
         }
         
         return sb.toString();
+    }
+    
+    /**
+     * Checks the response from a server request to determine if it is an OperationOutcome with a
+     * severity of ERROR or FATAL. If so, it will throw a runtime exception with the diagnostics of
+     * the issue(s).
+     * 
+     * @param resource The resource returned by a server request.
+     * @return Returns true if the resource was an OperationOutcome with no critical issues.
+     */
+    public static boolean checkOutcome(IBaseResource resource) {
+        if (resource instanceof OperationOutcome) {
+            OperationOutcome outcome = (OperationOutcome) resource;
+            
+            if (outcome.hasIssue()) {
+                StringBuilder sb = new StringBuilder();
+                
+                for (OperationOutcomeIssueComponent issue : outcome.getIssue()) {
+                    if (issue.getSeverity() == IssueSeverity.ERROR || issue.getSeverity() == IssueSeverity.FATAL) {
+                        sb.append(issue.getDiagnostics()).append('\n');
+                    }
+                }
+                
+                if (sb.length() != 0) {
+                    throw new RuntimeException(sb.toString());
+                }
+                
+            }
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Processes a MethodOutcome from a create or update request. If the request returns an updated
+     * version of the resource, that resource is returned. If the request returns a logical id, that
+     * id is set in the original resource. If the request resulted in an error, a runtime exception
+     * is thrown.
+     * 
+     * @param outcome The method outcome.
+     * @param resource The resource upon which the method was performed.
+     * @return If the method returned a new resource, that resource is returned. Otherwise, the
+     *         original resource is returned, possibly with an updated logical id.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IBaseResource> T processMethodOutcome(MethodOutcome outcome, T resource) {
+        checkOutcome(outcome.getOperationOutcome());
+        IIdType id = outcome.getId();
+        IBaseResource newResource = outcome.getResource();
+        
+        if (id != null) {
+            resource.setId(id);
+        } else if (newResource != null && newResource.getClass() == resource.getClass()) {
+            resource = (T) newResource;
+        }
+        
+        return resource;
     }
     
     /**
