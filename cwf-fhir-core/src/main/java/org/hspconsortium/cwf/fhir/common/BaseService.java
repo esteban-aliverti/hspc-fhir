@@ -21,6 +21,7 @@ package org.hspconsortium.cwf.fhir.common;
 
 import java.util.List;
 
+import org.carewebframework.api.messaging.Message;
 import org.hl7.fhir.dstu3.model.Bundle;
 import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Patient;
@@ -29,6 +30,7 @@ import org.hl7.fhir.instance.model.api.IBaseResource;
 
 import ca.uhn.fhir.model.api.Tag;
 import ca.uhn.fhir.model.primitive.UriDt;
+import ca.uhn.fhir.parser.DataFormatException;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.GenericClient;
 import ca.uhn.fhir.rest.client.IGenericClient;
@@ -36,7 +38,6 @@ import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 
 public class BaseService {
-    
     
     public static final String SP_IDENTIFIER = "identifier";
     
@@ -271,4 +272,56 @@ public class BaseService {
         return url.contains(":/") ? url : FhirUtil.concatPath(getServiceRoot(), url);
     }
     
+    /**
+     * Package a resource into a message for transport via the messaging subsystem.
+     * 
+     * @param resource The resource to package.
+     * @param asJSON If true, serialize to JSON format; otherwise, to XML format;
+     * @return The newly created message.
+     * @category Messaging
+     */
+    public Message resourceToMessage(IBaseResource resource, boolean asJSON) {
+        if (asJSON) {
+            String data = client.getFhirContext().newJsonParser().encodeResourceToString(resource);
+            return new Message("application/json+fhir", data);
+        } else {
+            String data = client.getFhirContext().newXmlParser().encodeResourceToString(resource);
+            return new Message("application/xml+fhir", data);
+        }
+    }
+    
+    /**
+     * Extracts a FHIR resource from a message.
+     * 
+     * @param message Message containing a FHIR resource.
+     * @return The extracted resource.
+     * @category Messaging
+     */
+    public IBaseResource messageToResource(Message message) {
+        if ("application/json+fhir".equals(message.getType())) {
+            return client.getFhirContext().newJsonParser().parseResource(message.getPayload().toString());
+        } else if ("application/xml+fhir".equals(message.getType())) {
+            return client.getFhirContext().newXmlParser().parseResource(message.getPayload().toString());
+        } else {
+            throw new DataFormatException(message.getType());
+        }
+    }
+    
+    /**
+     * Extracts a FHIR resource from a message.
+     * 
+     * @param message Message containing a FHIR resource.
+     * @param resourceType The expected resource type.
+     * @return The extracted resource.
+     * @category Messaging
+     */
+    public <T extends IBaseResource> T messageToResource(Message message, Class<T> resourceType) {
+        if ("application/json+fhir".equals(message.getType())) {
+            return client.getFhirContext().newJsonParser().parseResource(resourceType, message.getPayload().toString());
+        } else if ("application/xml+fhir".equals(message.getType())) {
+            return client.getFhirContext().newXmlParser().parseResource(resourceType, message.getPayload().toString());
+        } else {
+            throw new DataFormatException(message.getType());
+        }
+    }
 }
