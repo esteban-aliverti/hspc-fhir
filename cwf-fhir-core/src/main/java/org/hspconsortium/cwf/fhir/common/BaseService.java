@@ -26,9 +26,9 @@ import org.hl7.fhir.dstu3.model.Bundle;
 import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Reference;
+import org.hl7.fhir.instance.model.api.IBaseCoding;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 
-import ca.uhn.fhir.model.api.Tag;
 import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.parser.DataFormatException;
 import ca.uhn.fhir.rest.api.MethodOutcome;
@@ -175,7 +175,7 @@ public class BaseService {
      * @param tag Resources with this tag will be returned.
      * @return List of resources containing the tag.
      */
-    public List<IBaseResource> searchResourcesByTag(Tag tag) {
+    public List<IBaseResource> searchResourcesByTag(IBaseCoding tag) {
         Bundle bundle = getClient().search().forAllResources().withTag(tag.getSystem(), tag.getCode())
                 .returnBundle(Bundle.class).execute();
         
@@ -189,7 +189,7 @@ public class BaseService {
      * @param clazz Class of the resources to be searched.
      * @return List of resources containing the tag.
      */
-    public <T extends IBaseResource> List<T> searchResourcesByTag(Tag tag, Class<T> clazz) {
+    public <T extends IBaseResource> List<T> searchResourcesByTag(IBaseCoding tag, Class<T> clazz) {
         Bundle bundle = getClient().search().forResource(clazz).withTag(tag.getSystem(), tag.getCode())
                 .returnBundle(Bundle.class).execute();
         
@@ -215,7 +215,7 @@ public class BaseService {
      * @param tag Resources with this tag will be deleted.
      * @return Count of deleted resources.
      */
-    public int deleteResourcesByTag(Tag tag) {
+    public int deleteResourcesByTag(IBaseCoding tag) {
         return deleteResourcesByTag(tag, null);
     }
     
@@ -226,7 +226,7 @@ public class BaseService {
      * @param clazz Class of the resources to be searched (null for all).
      * @return Count of deleted resources.
      */
-    public <T extends IBaseResource> int deleteResourcesByTag(Tag tag, Class<T> clazz) {
+    public <T extends IBaseResource> int deleteResourcesByTag(IBaseCoding tag, Class<T> clazz) {
         List<? extends IBaseResource> resources = clazz == null ? searchResourcesByTag(tag)
                 : searchResourcesByTag(tag, clazz);
         deleteResources(resources);
