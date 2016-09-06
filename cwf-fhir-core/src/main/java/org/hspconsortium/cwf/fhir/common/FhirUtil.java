@@ -140,6 +140,66 @@ public class FhirUtil {
     }
     
     /**
+     * Performs an equality check on two references using their id's.
+     * 
+     * @param ref1 The first resource.
+     * @param ref2 The second resource.
+     * @return True if the two references have equal id's.
+     */
+    public static <T extends Reference> boolean areEqual(T ref1, T ref2) {
+        return areEqual(ref1, ref2, false);
+    }
+    
+    /**
+     * Performs an equality check on two resources using their id's.
+     * 
+     * @param ref1 The first resource.
+     * @param ref2 The second resource.
+     * @param ignoreVersion If true, ignore any version qualifiers in the comparison.
+     * @return True if the two resources have equal id's.
+     */
+    public static <T extends Reference> boolean areEqual(T ref1, T ref2, boolean ignoreVersion) {
+        if (ref1 == null || ref2 == null) {
+            return false;
+        }
+        
+        return ref1 == ref2 || getIdAsString(ref1, ignoreVersion).equals(getIdAsString(ref2, ignoreVersion));
+    }
+    
+    /**
+     * Performs an equality check between a resource and a reference using their id's.
+     * 
+     * @param res The resource.
+     * @param ref The reference.
+     * @return True if the two inputs have equal id's.
+     */
+    public static <T extends IBaseResource, R extends Reference> boolean areEqual(T res, R ref) {
+        return areEqual(res, ref, false);
+    }
+    
+    /**
+     * Performs an equality check between a resource and a reference using their id's.
+     * 
+     * @param res The resource.
+     * @param ref The reference.
+     * @param ignoreVersion If true, ignore any version qualifiers in the comparison.
+     * @return True if the two inputs have equal id's.
+     */
+    public static <T extends IBaseResource, R extends Reference> boolean areEqual(T res, R ref, boolean ignoreVersion) {
+        if (res == null || ref == null) {
+            return false;
+        }
+        
+        IBaseResource res2 = ref.getResource();
+        
+        if (res2 != null) {
+            return areEqual(res, res2, ignoreVersion);
+        }
+        
+        return getIdAsString(ref, ignoreVersion).equals(getIdAsString(res, ignoreVersion));
+    }
+    
+    /**
      * Checks the response from a server request to determine if it is an OperationOutcome with a
      * severity of ERROR or FATAL. If so, it will throw a runtime exception with the diagnostics of
      * the issue(s).
@@ -607,6 +667,31 @@ public class FhirUtil {
         return getIdAsString(resource.getIdElement(), stripVersion);
     }
     
+    /**
+     * Returns the string representation of the reference's resource id.
+     * 
+     * @param reference The reference.
+     * @param stripVersion If true and the id has a version qualifier, remove it.
+     * @return The string representation of the id.
+     */
+    public static String getIdAsString(Reference reference, boolean stripVersion) {
+        IBaseResource res = reference == null ? null : reference.getResource();
+        
+        if (res != null) {
+            return getIdAsString(res, stripVersion);
+        }
+        String result = reference == null ? null : reference.getReference();
+        return result == null ? "" : stripVersion ? stripVersion(result) : result;
+    }
+    
+    /**
+     * Returns the first identifier from the list that matches one of the specified types. A search
+     * is performed for each specified type, returning when a match is found.
+     * 
+     * @param list List of identifiers to consider.
+     * @param types Coding types to be matched.
+     * @return A matching identifier, or null if not found.
+     */
     public static Identifier getIdentifier(List<Identifier> list, Coding... types) {
         for (Coding type : types) {
             for (Identifier id : list) {

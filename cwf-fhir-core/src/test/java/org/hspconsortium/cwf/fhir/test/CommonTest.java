@@ -20,8 +20,10 @@
 package org.hspconsortium.cwf.fhir.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -35,11 +37,15 @@ import org.hl7.fhir.dstu3.model.Coding;
 import org.hl7.fhir.dstu3.model.Encounter;
 import org.hl7.fhir.dstu3.model.HumanName;
 import org.hl7.fhir.dstu3.model.HumanName.NameUse;
+import org.hl7.fhir.dstu3.model.IdType;
 import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.Period;
 import org.hl7.fhir.dstu3.model.Practitioner;
+import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.dstu3.model.Timing.UnitsOfTime;
+import org.hl7.fhir.instance.model.api.IAnyResource;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hspconsortium.cwf.fhir.common.FhirUtil;
 import org.junit.Test;
 
@@ -148,5 +154,37 @@ public class CommonTest {
         assertSame(list, FhirUtil.getNames(patient));
         assertSame(list, FhirUtil.getNames(practitioner));
         assertNull(FhirUtil.getNames(encounter));
+    }
+    
+    @Test
+    public void testEquals() {
+        IBaseResource res1v1 = new Patient();
+        res1v1.setId(createId("Patient", "1234", "1"));
+        IBaseResource res1v2 = new Patient();
+        res1v2.setId(createId("Patient", "1234", "2"));
+        assertTrue(FhirUtil.areEqual(res1v1, res1v2, true));
+        assertFalse(FhirUtil.areEqual(res1v1, res1v2, false));
+        IBaseResource res2v1 = new Encounter();
+        res2v1.setId(createId("Resource", "1234", "1"));
+        IBaseResource res2 = new Encounter();
+        res2.setId(createId("Resource", "1234", null));
+        assertFalse(FhirUtil.areEqual(res1v1, res2v1));
+        assertFalse(FhirUtil.areEqual(res2v1, res2));
+        assertTrue(FhirUtil.areEqual(res2v1, res2, true));
+        Reference ref1v1 = new Reference(res1v1.getIdElement());
+        Reference ref1v2 = new Reference(res1v2.getIdElement());
+        assertFalse(FhirUtil.areEqual(ref1v1, ref1v2));
+        assertTrue(FhirUtil.areEqual(ref1v1, ref1v2, true));
+        assertTrue(FhirUtil.areEqual(res1v1, ref1v1));
+        assertFalse(FhirUtil.areEqual(res1v1, ref1v2));
+        ref1v1 = new Reference((IAnyResource) res1v1);
+        assertFalse(FhirUtil.areEqual(ref1v1, ref1v2));
+        assertTrue(FhirUtil.areEqual(ref1v1, ref1v2, true));
+        assertTrue(FhirUtil.areEqual(res1v1, ref1v1));
+        assertFalse(FhirUtil.areEqual(res2v1, ref1v1));
+    }
+    
+    private IdType createId(String resourceType, String id, String versionId) {
+        return new IdType(resourceType, id, versionId);
     }
 }
