@@ -25,10 +25,11 @@ import org.hl7.fhir.dstu3.model.HumanName;
 import org.hl7.fhir.dstu3.model.StringType;
 
 /**
- * Default human name parser.
+ * Default human name parser. Assumes family name(s) are first and separated from given name(s) by a
+ * comma. For example, <em>Smith Jones, Jonathan Xavier</em>. Parser currently doesn't handle name
+ * prefixes and suffixes.
  */
 public class HumanNameParser implements IHumanNameParser {
-    
     
     @Override
     public String toString(HumanName name) {

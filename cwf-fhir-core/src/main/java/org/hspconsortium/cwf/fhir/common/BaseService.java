@@ -37,6 +37,9 @@ import ca.uhn.fhir.rest.client.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 
+/**
+ * Base service for accessing FHIR-based services.
+ */
 public class BaseService {
     
     public static final String SP_IDENTIFIER = "identifier";
@@ -49,24 +52,56 @@ public class BaseService {
     
     private final IGenericClient client;
     
+    /**
+     * Inject FHIR client.
+     * 
+     * @param client The FHIR client.
+     */
     public BaseService(IGenericClient client) {
         this.client = client;
     }
     
+    /**
+     * Returns the FHIR client.
+     * 
+     * @return The FHIR client.
+     */
     public IGenericClient getClient() {
-        return this.client;
+        return client;
     }
     
+    /**
+     * FHIR request to update the given resource.
+     * 
+     * @param resource Resource to update.
+     * @return The updated resource.
+     * @exception Exception Exception if operation failed.
+     */
     public <T extends IBaseResource> T updateResource(T resource) {
         MethodOutcome outcome = getClient().update().resource(FhirUtil.stripVersion(resource)).execute();
         return FhirUtil.processMethodOutcome(outcome, resource);
     }
     
+    /**
+     * FHIR request to create the given resource.
+     * 
+     * @param resource Resource to create.
+     * @return The created resource.
+     * @exception Exception Exception if operation failed.
+     */
     public <T extends IBaseResource> T createResource(T resource) {
         MethodOutcome outcome = getClient().create().resource(resource).execute();
         return FhirUtil.processMethodOutcome(outcome, resource);
     }
     
+    /**
+     * FHIR request to create or update the given resource. If the resource has no logical
+     * identifier, a create operation is requested. Otherwise, an update operation is requested.
+     * 
+     * @param resource Resource to create or update.
+     * @return The resource resulting from the operation.
+     * @exception Exception Exception if operation failed.
+     */
     public <T extends IBaseResource> T createOrUpdateResource(T resource) {
         return resource.getIdElement().isEmpty() ? createResource(resource) : updateResource(resource);
     }

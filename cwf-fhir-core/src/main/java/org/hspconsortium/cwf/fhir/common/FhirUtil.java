@@ -727,15 +727,6 @@ public class FhirUtil {
         return list == null || list.isEmpty() ? null : list.get(list.size() - 1);
     }
     
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> getListProperty(IBaseResource resource, String propertyName, Class<T> itemClass) {
-        try {
-            return (List<T>) PropertyUtils.getSimpleProperty(resource, propertyName);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-    
     /**
      * Returns a patient's MRN. (What types should be explicitly considered?)
      * 
@@ -800,6 +791,15 @@ public class FhirUtil {
                 : "Patient".equals(getResourceType(ref.getReferenceElement())) ? ref : null;
     }
     
+    /**
+     * Returns the value of a property from a resource base.
+     * 
+     * @param resource The resource containing the property.
+     * @param getter The name of the getter method for the property.
+     * @param expectedClass The expected class of the property value (null for any).
+     * @return The value of the property. A null return value may mean the property does not exist
+     *         or the property getter returned null. Will never throw an exception.
+     */
     @SuppressWarnings("unchecked")
     private static <T> T getProperty(IBaseResource resource, String getter, Class<T> expectedClass) {
         Object result = null;
@@ -810,6 +810,24 @@ public class FhirUtil {
         } catch (Exception e) {}
         
         return (T) result;
+    }
+    
+    /**
+     * Returns the value of a property that returns a list from a resource base.
+     * 
+     * @param resource The resource containing the property.
+     * @param propertyName The name of the property.
+     * @param itemClass The expected class of the list elements.
+     * @return The value of the property. A null return value may mean the property does not exist
+     *         or the property getter returned null. Will never throw an exception.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> getListProperty(IBaseResource resource, String propertyName, Class<T> itemClass) {
+        try {
+            return (List<T>) PropertyUtils.getSimpleProperty(resource, propertyName);
+        } catch (Exception e) {
+            return null;
+        }
     }
     
     /**
@@ -856,7 +874,7 @@ public class FhirUtil {
     }
     
     /**
-     * Returns the resource ID relative path from a IdDt datatype.
+     * Returns the resource ID relative path from an IdDt datatype.
      * 
      * @param resource The resource.
      * @return The resource's relative path.
