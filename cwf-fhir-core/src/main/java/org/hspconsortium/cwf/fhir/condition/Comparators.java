@@ -28,9 +28,7 @@ import org.hl7.fhir.dstu3.model.Condition;
  */
 public class Comparators {
     
-    
     public static final Comparator<Condition> CONDITION_DATE_RECORDED = new Comparator<Condition>() {
-        
         
         @Override
         public int compare(Condition o1, Condition o2) {
@@ -39,5 +37,5 @@ public class Comparators {
     };
     
     private Comparators() {
-    };
+    }
 }
