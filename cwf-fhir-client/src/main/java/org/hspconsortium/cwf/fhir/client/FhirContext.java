@@ -35,7 +35,6 @@ import ca.uhn.fhir.rest.client.IGenericClient;
  */
 public class FhirContext extends ca.uhn.fhir.context.FhirContext {
     
-    
     private final String proxy;
     
     private RestfulClientFactory myRestfulClientFactory;
@@ -52,8 +51,12 @@ public class FhirContext extends ca.uhn.fhir.context.FhirContext {
         authInterceptors.put(id.toLowerCase(), authInterceptor);
     }
     
+    /**
+     * @deprecated Use configurator-based constructor.
+     */
+    @Deprecated
     public FhirContext() {
-        super();
+        super((FhirVersionEnum) null);
         proxy = null;
     }
     
