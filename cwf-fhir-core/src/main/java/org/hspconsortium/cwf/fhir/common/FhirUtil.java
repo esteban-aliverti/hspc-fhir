@@ -113,6 +113,42 @@ public class FhirUtil {
     }
     
     /**
+     * Returns the first resource tag matching the specified system.
+     * 
+     * @param resource The resource.
+     * @param system The system.
+     * @return The first matching tag or null if none found.
+     */
+    public static IBaseCoding getTagBySystem(IBaseResource resource, String system) {
+        for (IBaseCoding coding : resource.getMeta().getTag()) {
+            if (system.equals(coding.getSystem())) {
+                return coding;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Returns all resource tags belonging to the specified system.
+     * 
+     * @param resource The resource.
+     * @param system The system.
+     * @return A list of matching tags; never null;
+     */
+    public static List<IBaseCoding> getTagsBySystem(IBaseResource resource, String system) {
+        List<IBaseCoding> result = new ArrayList<>();
+        
+        for (IBaseCoding coding : resource.getMeta().getTag()) {
+            if (system.equals(coding.getSystem())) {
+                result.add(coding);
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
      * Performs an equality check on two resources using their id's.
      * 
      * @param res1 The first resource.
