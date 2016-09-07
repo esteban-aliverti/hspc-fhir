@@ -910,13 +910,25 @@ public class FhirUtil {
     }
     
     /**
-     * Returns the resource ID relative path from an IdDt datatype.
+     * Returns the resource ID relative path.
      * 
      * @param resource The resource.
      * @return The resource's relative path.
      */
     public static String getResourceIdPath(IBaseResource resource) {
-        return resource.getIdElement().getResourceType() + "/" + resource.getIdElement().getIdPart();
+        return getResourceIdPath(resource, true);
+    }
+    
+    /**
+     * Returns the resource ID relative path.
+     * 
+     * @param resource The resource.
+     * @param stripVersion If true and the id has a version qualifier, remove it.
+     * @return The resource's relative path.
+     */
+    public static String getResourceIdPath(IBaseResource resource, boolean stripVersion) {
+        String id = resource.getIdElement().getResourceType() + "/" + resource.getIdElement().getIdPart();
+        return stripVersion ? stripVersion(id) : id;
     }
     
     /**
