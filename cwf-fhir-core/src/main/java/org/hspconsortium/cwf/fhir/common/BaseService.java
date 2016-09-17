@@ -204,6 +204,13 @@ public class BaseService {
         return FhirUtil.getEntries(bundle, clazz);
     }
     
+    public <T extends IBaseResource> List<T> searchResourcesByType(Class<T> clazz) {
+        Bundle bundle = getClient().search().forResource(clazz)
+                .returnBundle(Bundle.class).execute();
+        
+        return FhirUtil.getEntries(bundle, clazz);
+    }
+    
     /**
      * Returns all resources that contain the tag.
      * 
